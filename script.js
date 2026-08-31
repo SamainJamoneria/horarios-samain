@@ -12,14 +12,21 @@ const coloresSuaves = [
 ];
 
 let empleados = JSON.parse(localStorage.getItem("samain_empleados")) || [
-    { nombre: "Empleado 1", exportar: true },
-    { nombre: "Empleado 2", exportar: true },
-    { nombre: "Empleado 3", exportar: true }
+    { nombre: "Empleado 1", exportar: true, exportarHoras: false },
+    { nombre: "Empleado 2", exportar: true, exportarHoras: false },
+    { nombre: "Empleado 3", exportar: true, exportarHoras: false }
 ];
 
-if (empleados.length > 0 && typeof empleados[0] === "string") {
-    empleados = empleados.map(nombre => ({ nombre: nombre, exportar: true }));
-}
+// Compatibilidad con versiones anteriores si guardaban texto simple o faltaba la propiedad
+empleados = empleados.map(emp => {
+    if (typeof emp === "string") {
+        return { nombre: emp, exportar: true, exportarHoras: false };
+    }
+    if (emp.exportarHoras === undefined) {
+        emp.exportarHoras = false;
+    }
+    return emp;
+});
 
 const tbody = document.getElementById("tabla-horarios");
 
@@ -78,12 +85,27 @@ function cargarTabla() {
         inputNombre.value = emp.nombre;
         inputNombre.oninput = function() { actualizarNombre(this, index); };
 
+        let divHoras = document.createElement("div");
+        divHoras.className = "horas-container";
+        if (emp.exportarHoras) {
+            divHoras.classList.add("horas-exportables-activo");
+        }
+
         let spanHoras = document.createElement("span");
         spanHoras.className = "total-horas";
         spanHoras.innerText = `${totalHorasSemanales.toFixed(1).replace('.0','')}h`;
 
+        let btnOjoHoras = document.createElement("button");
+        btnOjoHoras.className = "btn-eye-horas";
+        btnOjoHoras.innerHTML = emp.exportarHoras ? "👁️" : "🔒";
+        btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF (haz clic para ocultar)" : "Horas ocultas en PDF (haz clic para mostrar)";
+        btnOjoHoras.onclick = function() { toggleExportarHorasEmpleado(index); };
+
+        divHoras.appendChild(spanHoras);
+        divHoras.appendChild(btnOjoHoras);
+
         divCell.appendChild(inputNombre);
-        divCell.appendChild(spanHoras);
+        divCell.appendChild(divHoras);
         tdNombre.appendChild(divCell);
         tr.appendChild(tdNombre);
 
@@ -119,7 +141,7 @@ function cargarTabla() {
         let btnOjo = document.createElement("button");
         btnOjo.className = "btn-eye";
         btnOjo.innerHTML = iconoOjo;
-        btnOjo.title = emp.exportar ? "Visible en PDF (haz clic para ocultar)" : "Oculto en PDF (haz clic para mostrar)";
+        btnOjo.title = emp.exportar ? "Empleado visible en PDF (haz clic para ocultar)" : "Empleado oculto en PDF (haz clic para mostrar)";
         btnOjo.onclick = function() { toggleExportarEmpleado(index); };
 
         let btnDel = document.createElement("button");
@@ -162,9 +184,15 @@ function toggleExportarEmpleado(index) {
     cargarTabla();
 }
 
+function toggleExportarHorasEmpleado(index) {
+    empleados[index].exportarHoras = !empleados[index].exportarHoras;
+    localStorage.setItem("samain_empleados", JSON.stringify(empleados));
+    cargarTabla();
+}
+
 function agregarEmpleado() {
     let nuevoNombre = `Empleado ${empleados.length + 1}`;
-    empleados.push({ nombre: nuevoNombre, exportar: true });
+    empleados.push({ nombre: nuevoNombre, exportar: true, exportarHoras: false });
     localStorage.setItem("samain_empleados", JSON.stringify(empleados));
     cargarTabla();
 }
