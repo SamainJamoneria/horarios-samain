@@ -1,4 +1,3 @@
-// Lista de colores suaves predefinidos para los empleados
 const coloresSuaves = [
     "#d4efdf", // Verde muy suave
     "#d6eaf8", // Azul muy suave
@@ -12,61 +11,166 @@ const coloresSuaves = [
     "#eaeded"  // Negro/Gris muy suave
 ];
 
-// Cargar empleados guardados o empezar con 3 por defecto
-let empleados = JSON.parse(localStorage.getItem("samain_empleados")) || ["Empleado 1", "Empleado 2", "Empleado 3"];
+let empleados = JSON.parse(localStorage.getItem("samain_empleados")) || [
+    { nombre: "Empleado 1", exportar: true },
+    { nombre: "Empleado 2", exportar: true },
+    { nombre: "Empleado 3", exportar: true }
+];
+
+if (empleados.length > 0 && typeof empleados[0] === "string") {
+    empleados = empleados.map(nombre => ({ nombre: nombre, exportar: true }));
+}
 
 const tbody = document.getElementById("tabla-horarios");
 
-// Generar la tabla en pantalla
+function calcularHorasTexto(texto) {
+    if (!texto) return 0;
+    let t = texto.trim().toLowerCase();
+    if (t === "libre" || t === "v" || t === "" || t.includes("libranza")) return 0;
+
+    let regex = /(\d{1,2})[:\.]?(\d{2})?\s*(?:-|a)\s*(\d{1,2})[:\.]?(\d{2})?/;
+    let match = t.match(regex);
+    if (match) {
+        let hInicio = parseInt(match[1], 10);
+        let mInicio = match[2] ? parseInt(match[2], 10) : 0;
+        let hFin = parseInt(match[3], 10);
+        let mFin = match[4] ? parseInt(match[4], 10) : 0;
+
+        let totalMinInicio = hInicio * 60 + mInicio;
+        let totalMinFin = hFin * 60 + mFin;
+
+        if (totalMinFin < totalMinInicio) {
+            totalMinFin += 24 * 60;
+        }
+        let diffMin = totalMinFin - totalMinInicio;
+        return diffMin > 0 ? diffMin / 60 : 0;
+    }
+    return 0;
+}
+
 function cargarTabla() {
     tbody.innerHTML = "";
-    
+    let mostrarColTotal = document.getElementById("chk-exportar-total").checked;
+
     empleados.forEach((emp, index) => {
         let tr = document.createElement("tr");
         let colorFondo = coloresSuaves[index % coloresSuaves.length];
         tr.style.backgroundColor = colorFondo;
-        
-        // Columna del nombre del empleado
+
+        if (!emp.exportar) {
+            tr.classList.add("fila-oculta-pdf");
+        }
+
+        let totalHorasSemanales = 0;
+        for (let dia = 1; dia <= 7; dia++) {
+            let key = `emp-${index}-dia-${dia}`;
+            let val = localStorage.getItem(key) || "";
+            totalHorasSemanales += calcularHorasTexto(val);
+        }
+
         let tdNombre = document.createElement("td");
-        tdNombre.innerHTML = `<input type="text" class="empleado-input" value="${emp}" data-id="emp-${index}" oninput="actualizarNombre(this, ${index})">`;
+        let divCell = document.createElement("div");
+        divCell.className = "empleado-cell";
+
+        let inputNombre = document.createElement("input");
+        inputNombre.type = "text";
+        inputNombre.className = "empleado-input";
+        inputNombre.value = emp.nombre;
+        inputNombre.oninput = function() { actualizarNombre(this, index); };
+
+        let spanHoras = document.createElement("span");
+        spanHoras.className = "total-horas";
+        spanHoras.innerText = `${totalHorasSemanales.toFixed(1).replace('.0','')}h`;
+
+        divCell.appendChild(inputNombre);
+        divCell.appendChild(spanHoras);
+        tdNombre.appendChild(divCell);
         tr.appendChild(tdNombre);
 
-        // Columnas de los 7 días de la semana
         for (let dia = 1; dia <= 7; dia++) {
             let tdDia = document.createElement("td");
             let key = `emp-${index}-dia-${dia}`;
             let valorGuardado = localStorage.getItem(key) || "";
-            tdDia.innerHTML = `<input type="text" placeholder="9-17" value="${valorGuardado}" data-key="${key}" oninput="guardarDato(this)">`;
+            let inputDia = document.createElement("input");
+            inputDia.type = "text";
+            inputDia.placeholder = "9-17";
+            inputDia.value = valorGuardado;
+            inputDia.setAttribute("data-key", key);
+            inputDia.oninput = function() {
+                guardarDato(this);
+                actualizarTotalFila(index);
+            };
+            tdDia.appendChild(inputDia);
             tr.appendChild(tdDia);
         }
 
-        // Botón para borrar esta fila de empleado (con la clase no-print para ocultarlo en el PDF)
+        let tdTotalCol = document.createElement("td");
+        tdTotalCol.className = "col-total-horas";
+        tdTotalCol.style.display = mostrarColTotal ? "" : "none";
+        tdTotalCol.style.fontWeight = "bold";
+        tdTotalCol.innerText = `${totalHorasSemanales.toFixed(1).replace('.0','')}h`;
+        tr.appendChild(tdTotalCol);
+
         let tdAccion = document.createElement("td");
         tdAccion.className = "no-print";
-        tdAccion.innerHTML = `<button class="btn-delete" onclick="eliminarEmpleado(${index})">X</button>`;
+        tdAccion.style.whiteSpace = "nowrap";
+
+        let iconoOjo = emp.exportar ? "👁️" : "🔒";
+        let btnOjo = document.createElement("button");
+        btnOjo.className = "btn-eye";
+        btnOjo.innerHTML = iconoOjo;
+        btnOjo.title = emp.exportar ? "Visible en PDF (haz clic para ocultar)" : "Oculto en PDF (haz clic para mostrar)";
+        btnOjo.onclick = function() { toggleExportarEmpleado(index); };
+
+        let btnDel = document.createElement("button");
+        btnDel.className = "btn-delete";
+        btnDel.innerHTML = "❌";
+        btnDel.onclick = function() { eliminarEmpleado(index); };
+
+        tdAccion.appendChild(btnOjo);
+        tdAccion.appendChild(btnDel);
         tr.appendChild(tdAccion);
-        
+
         tbody.appendChild(tr);
     });
 }
 
-// Actualizar nombre del empleado
+function actualizarTotalFila(index) {
+    let suma = 0;
+    for (let dia = 1; dia <= 7; dia++) {
+        let key = `emp-${index}-dia-${dia}`;
+        let val = localStorage.getItem(key) || "";
+        suma += calcularHorasTexto(val);
+    }
+    let filas = tbody.querySelectorAll("tr");
+    if (filas[index]) {
+        let span = filas[index].querySelector(".total-horas");
+        if (span) span.innerText = `${suma.toFixed(1).replace('.0','')}h`;
+        let tdTotalCol = filas[index].querySelector(".col-total-horas");
+        if (tdTotalCol) tdTotalCol.innerText = `${suma.toFixed(1).replace('.0','')}h`;
+    }
+}
+
 function actualizarNombre(input, index) {
-    empleados[index] = input.value;
+    empleados[index].nombre = input.value;
     localStorage.setItem("samain_empleados", JSON.stringify(empleados));
 }
 
-// Añadir un nuevo empleado
-function agregarEmpleado() {
-    let nuevoNombre = `Empleado ${empleados.length + 1}`;
-    empleados.push(nuevoNombre);
+function toggleExportarEmpleado(index) {
+    empleados[index].exportar = !empleados[index].exportar;
     localStorage.setItem("samain_empleados", JSON.stringify(empleados));
     cargarTabla();
 }
 
-// Eliminar un empleado y limpiar sus turnos asociados
+function agregarEmpleado() {
+    let nuevoNombre = `Empleado ${empleados.length + 1}`;
+    empleados.push({ nombre: nuevoNombre, exportar: true });
+    localStorage.setItem("samain_empleados", JSON.stringify(empleados));
+    cargarTabla();
+}
+
 function eliminarEmpleado(index) {
-    if (confirm(`¿Seguro que quieres eliminar a ${empleados[index]} y sus turnos?`)) {
+    if (confirm(`¿Seguro que quieres eliminar a ${empleados[index].nombre} y sus turnos?`)) {
         for (let dia = 1; dia <= 7; dia++) {
             localStorage.removeItem(`emp-${index}-dia-${dia}`);
         }
@@ -76,14 +180,12 @@ function eliminarEmpleado(index) {
     }
 }
 
-// Guardar automáticamente lo que escriba en los turnos
 function guardarDato(elemento) {
     let key = elemento.getAttribute("data-key");
     let valor = elemento.value;
     localStorage.setItem(key, valor);
 }
 
-// Botón de limpiar todo
 function limpiarHorario() {
     if (confirm("¿Seguro que quieres borrar todos los turnos de la pantalla?")) {
         Object.keys(localStorage).forEach(key => {
@@ -95,5 +197,4 @@ function limpiarHorario() {
     }
 }
 
-// Ejecutar al abrir la página
 cargarTabla();
