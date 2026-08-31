@@ -5,26 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Horarios Samaín</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 15px; color: #333; }
-        .container { max-width: 100%; margin: auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; font-size: 1.2rem; }
-        .controls { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 10px; }
-        button { background-color: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.9rem; }
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 5px; color: #333; }
+        .container { width: 100%; max-width: 100%; margin: auto; background: white; padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h2 { text-align: center; color: #2c3e50; font-size: 1.1rem; margin-top: 5px; margin-bottom: 10px; }
+        .controls { display: flex; gap: 8px; margin-bottom: 10px; }
+        button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; }
         button.btn-pdf { background-color: #e74c3c; }
         button:active { opacity: 0.8; }
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; min-width: 600px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 0.85rem; }
-        th { background-color: #2c3e50; color: white; }
-        td input { width: 90%; padding: 6px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
-        .empleado-input { font-weight: bold; text-align: left !important; background: #f8f9fa; }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; min-width: 550px; }
+        th, td { border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 0.75rem; }
+        th { background-color: #2c3e50; color: white; padding: 6px 4px; }
+        td input { width: 95%; padding: 6px 2px; text-align: center; border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem; box-sizing: border-box; }
+        .empleado-input { font-weight: bold; text-align: left !important; background: #f8f9fa; padding-left: 4px; }
         
-        /* Estilos específicos para cuando se imprima o exporte a PDF */
+        /* Estilos para cuando se imprima o guarde en PDF */
         @media print {
             body { background: white; padding: 0; }
             .container { box-shadow: none; padding: 0; }
             .controls, button { display: none !important; }
-            table { font-size: 0.8rem; }
+            table { font-size: 0.7rem; min-width: 100%; }
             td input { border: none; background: transparent; font-weight: bold; }
         }
     </style>
@@ -54,7 +54,7 @@
                 </tr>
             </thead>
             <tbody id="tabla-horarios">
-                <!-- Los empleados se generan automáticamente mediante código -->
+                <!-- Se genera mediante script.js -->
             </tbody>
         </table>
     </div>
