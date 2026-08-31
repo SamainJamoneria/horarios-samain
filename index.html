@@ -22,12 +22,14 @@
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; }
         .btn-delete:hover { background: #c0392b; }
         
-        /* Estilos para cuando se imprima o guarde en PDF */
+        /* ESTILOS CLAVE PARA IMPRESIÓN / PDF */
         @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; padding: 0; }
-            .controls, button, .btn-delete { display: none !important; }
-            table { font-size: 0.7rem; min-width: 100%; }
+            body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .container { box-shadow: none; padding: 0; width: 100%; }
+            .controls, button, .no-print { display: none !important; }
+            table { font-size: 0.7rem; min-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            th { background-color: #2c3e50 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             td input { border: none; background: transparent !important; font-weight: bold; }
         }
     </style>
@@ -55,7 +57,7 @@
                     <th>Viernes</th>
                     <th>Sábado</th>
                     <th>Domingo</th>
-                    <th style="width: 30px;">❌</th>
+                    <th class="no-print" style="width: 30px;">❌</th>
                 </tr>
             </thead>
             <tbody id="tabla-horarios">
