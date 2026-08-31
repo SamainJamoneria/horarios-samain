@@ -22,7 +22,12 @@
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; }
         .btn-delete:hover { background: #c0392b; }
         
-        /* ESTILOS CLAVE PARA IMPRESIÓN / PDF */
+        /* ESTILOS CLAVE PARA IMPRESIÓN / PDF LIMPIO */
+        @page {
+            size: auto;
+            margin: 10mm; /* Esto elimina los encabezados y pies de página automáticos del navegador */
+        }
+
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; }
