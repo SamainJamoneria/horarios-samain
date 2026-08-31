@@ -6,7 +6,10 @@ const coloresSuaves = [
     "#ebdef0", // Morado muy suave
     "#f9ebea", // Rojo/Rosa muy suave
     "#e8f8f5", // Turquesa muy suave
-    "#fef9e7"  // Naranja muy suave
+    "#fef9e7", // Naranja muy suave
+    "#fae5d3", // Marrón muy suave
+    "#fadbd8", // Rojo muy suave
+    "#eaeded"  // Negro/Gris muy suave
 ];
 
 // Cargar empleados guardados o empezar con 3 por defecto
