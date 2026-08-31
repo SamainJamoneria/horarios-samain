@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Horarios Samaín</title>
+    <!-- ICONO PARA LA PANTALLA DE INICIO DEL MÓVIL -->
+    <link rel="apple-touch-icon" href="icono.png">
+    <link rel="icon" href="icono.png">
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 5px; color: #333; }
         
@@ -97,8 +100,7 @@
 </div>
 
 <script>
-    // CAMBIA AQUÍ LA CONTRASEÑA SI LO DESEAS
-    const CLISECRETA = "1494";
+    const CLISECRETA = "1234";
 
     function verificarPassword() {
         let pass = document.getElementById("input-password").value;
@@ -112,14 +114,12 @@
         }
     }
 
-    // Permitir pulsar Enter para entrar
     document.getElementById("input-password").addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
             verificarPassword();
         }
     });
 
-    // Si ya introdujo la contraseña en esta pestaña recientemente, no se la vuelve a pedir
     window.onload = function() {
         if (sessionStorage.getItem("sesion_activa") === "true") {
             document.getElementById("pantalla-login").style.display = "none";
