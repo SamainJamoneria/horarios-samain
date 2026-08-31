@@ -6,7 +6,23 @@
     <title>Horarios Samaín</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 5px; color: #333; }
-        .container { width: 100%; max-width: 100%; margin: auto; background: white; padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; }
+        
+        /* Pantalla de bloqueo / Contraseña */
+        #pantalla-login {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #2c3e50; display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+        }
+        .login-card {
+            background: white; padding: 25px; border-radius: 8px; text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 85%; max-width: 300px;
+        }
+        .login-card h3 { margin-top: 0; color: #2c3e50; font-size: 1.2rem; }
+        .login-card input { width: 100%; padding: 10px; margin-bottom: 12px; box-sizing: border-box; text-align: center; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+        .login-card button { width: 100%; padding: 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        /* Contenido principal de la app */
+        .container { width: 100%; max-width: 100%; margin: auto; background: white; padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; display: none; }
         h2 { text-align: center; color: #2c3e50; font-size: 1.1rem; margin-top: 5px; margin-bottom: 10px; }
         .controls { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
         button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; min-width: 110px; }
@@ -22,15 +38,12 @@
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; }
         .btn-delete:hover { background: #c0392b; }
         
-        /* ESTILOS CLAVE PARA IMPRESIÓN / PDF LIMPIO */
-        @page {
-            size: auto;
-            margin: 10mm; /* Esto elimina los encabezados y pies de página automáticos del navegador */
-        }
+        @page { size: auto; margin: 10mm; }
 
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .container { box-shadow: none; padding: 0; width: 100%; }
+            .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
+            #pantalla-login { display: none !important; }
             .controls, button, .no-print { display: none !important; }
             table { font-size: 0.7rem; min-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             th { background-color: #2c3e50 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -41,7 +54,18 @@
 </head>
 <body>
 
-<div class="container">
+<!-- PANTALLA DE ACCESO CON CONTRASEÑA -->
+<div id="pantalla-login">
+    <div class="login-card">
+        <h3>Horarios Samaín</h3>
+        <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Introduce la contraseña para acceder</p>
+        <input type="password" id="input-password" placeholder="Contraseña" autocomplete="current-password">
+        <button onclick="verificarPassword()">Entrar</button>
+    </div>
+</div>
+
+<!-- APLICACIÓN PRINCIPAL -->
+<div class="container" id="app-container">
     <h2>Horario Semanal - Samaín</h2>
     
     <div class="controls">
@@ -71,6 +95,38 @@
         </table>
     </div>
 </div>
+
+<script>
+    // CAMBIA AQUÍ LA CONTRASEÑA SI LO DESEAS
+    const CLISECRETA = "1494";
+
+    function verificarPassword() {
+        let pass = document.getElementById("input-password").value;
+        if (pass === CLISECRETA) {
+            document.getElementById("pantalla-login").style.display = "none";
+            document.getElementById("app-container").style.display = "block";
+            sessionStorage.setItem("sesion_activa", "true");
+        } else {
+            alert("Contraseña incorrecta");
+            document.getElementById("input-password").value = "";
+        }
+    }
+
+    // Permitir pulsar Enter para entrar
+    document.getElementById("input-password").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            verificarPassword();
+        }
+    });
+
+    // Si ya introdujo la contraseña en esta pestaña recientemente, no se la vuelve a pedir
+    window.onload = function() {
+        if (sessionStorage.getItem("sesion_activa") === "true") {
+            document.getElementById("pantalla-login").style.display = "none";
+            document.getElementById("app-container").style.display = "block";
+        }
+    };
+</script>
 
 <script src="script.js"></script>
 </body>
