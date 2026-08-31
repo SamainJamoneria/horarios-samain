@@ -37,8 +37,9 @@ function cargarTabla() {
             tr.appendChild(tdDia);
         }
 
-        // Botón para borrar esta fila de empleado
+        // Botón para borrar esta fila de empleado (con la clase no-print para ocultarlo en el PDF)
         let tdAccion = document.createElement("td");
+        tdAccion.className = "no-print";
         tdAccion.innerHTML = `<button class="btn-delete" onclick="eliminarEmpleado(${index})">X</button>`;
         tr.appendChild(tdAccion);
         
@@ -63,15 +64,11 @@ function agregarEmpleado() {
 // Eliminar un empleado y limpiar sus turnos asociados
 function eliminarEmpleado(index) {
     if (confirm(`¿Seguro que quieres eliminar a ${empleados[index]} y sus turnos?`)) {
-        // Limpiar datos de turnos de este empleado en localStorage
         for (let dia = 1; dia <= 7; dia++) {
             localStorage.removeItem(`emp-${index}-dia-${dia}`);
         }
         empleados.splice(index, 1);
         localStorage.setItem("samain_empleados", JSON.stringify(empleados));
-        
-        // Reorganizar los turnos restantes en localStorage para que no se mezclen
-        // (recargamos la estructura limpia)
         cargarTabla();
     }
 }
@@ -86,7 +83,6 @@ function guardarDato(elemento) {
 // Botón de limpiar todo
 function limpiarHorario() {
     if (confirm("¿Seguro que quieres borrar todos los turnos de la pantalla?")) {
-        // Mantenemos los empleados pero borramos los turnos
         Object.keys(localStorage).forEach(key => {
             if (key.includes("-dia-")) {
                 localStorage.removeItem(key);
