@@ -28,6 +28,7 @@ empleados = empleados.map(emp => {
 });
 
 const tbody = document.getElementById("tabla-horarios");
+let ultimaCasillaActiva = null; 
 
 function calcularHorasLinea(texto) {
     if (!texto) return 0;
@@ -56,7 +57,6 @@ function calcularHorasLinea(texto) {
 
 function calcularHorasTexto(textoCompleto) {
     if (!textoCompleto) return 0;
-    // Divide por saltos de línea para calcular horarios partidos correctamente
     let lineas = textoCompleto.split(/\r?\n/);
     let totalSuma = 0;
     lineas.forEach(linea => {
@@ -67,7 +67,6 @@ function calcularHorasTexto(textoCompleto) {
 
 function cargarTabla() {
     tbody.innerHTML = "";
-    let mostrarColTotal = document.getElementById("chk-exportar-total").checked;
 
     empleados.forEach((emp, index) => {
         let tr = document.createElement("tr");
@@ -108,7 +107,7 @@ function cargarTabla() {
         let btnOjoHoras = document.createElement("button");
         btnOjoHoras.className = "btn-eye-horas";
         btnOjoHoras.innerHTML = emp.exportarHoras ? "👁️" : "🔒";
-        btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF (haz clic para ocultar)" : "Horas ocultas en PDF (haz clic para mostrar)";
+        btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF (haz clic para ocultar individualmente)" : "Horas ocultas en PDF (haz clic para mostrar individualmente)";
         btnOjoHoras.onclick = function() { toggleExportarHorasEmpleado(index); };
 
         divHoras.appendChild(spanHoras);
@@ -124,25 +123,23 @@ function cargarTabla() {
             let key = `emp-${index}-dia-${dia}`;
             let valorGuardado = localStorage.getItem(key) || "";
             
-            // Usamos textarea para permitir saltos de línea (Enter)
             let textareaDia = document.createElement("textarea");
-            textareaDia.placeholder = "9-13\n16-20";
+            textareaDia.placeholder = "9-17";
             textareaDia.value = valorGuardado;
             textareaDia.setAttribute("data-key", key);
+            
+            textareaDia.onfocus = function() {
+                ultimaCasillaActiva = this;
+            };
             textareaDia.oninput = function() {
+                ultimaCasillaActiva = this;
                 guardarDato(this);
                 actualizarTotalFila(index);
             };
+
             tdDia.appendChild(textareaDia);
             tr.appendChild(tdDia);
         }
-
-        let tdTotalCol = document.createElement("td");
-        tdTotalCol.className = "col-total-horas";
-        tdTotalCol.style.display = mostrarColTotal ? "" : "none";
-        tdTotalCol.style.fontWeight = "bold";
-        tdTotalCol.innerText = `${totalHorasSemanales.toFixed(1).replace('.0','')}h`;
-        tr.appendChild(tdTotalCol);
 
         let tdAccion = document.createElement("td");
         tdAccion.className = "no-print";
@@ -168,6 +165,21 @@ function cargarTabla() {
     });
 }
 
+function aplicarTurnoRapido(turnoTexto) {
+    if (!ultimaCasillaActiva) {
+        alert("Primero haz clic en la casilla de algún día del empleado donde quieras poner el turno.");
+        return;
+    }
+    ultimaCasillaActiva.value = turnoTexto;
+    guardarDato(ultimaCasillaActiva);
+    
+    let row = ultimaCasillaActiva.closest("tr");
+    let rowIndex = Array.from(tbody.querySelectorAll("tr")).indexOf(row);
+    if (rowIndex !== -1) {
+        actualizarTotalFila(rowIndex);
+    }
+}
+
 function actualizarTotalFila(index) {
     let suma = 0;
     for (let dia = 1; dia <= 7; dia++) {
@@ -179,8 +191,6 @@ function actualizarTotalFila(index) {
     if (filas[index]) {
         let span = filas[index].querySelector(".total-horas");
         if (span) span.innerText = `${suma.toFixed(1).replace('.0','')}h`;
-        let tdTotalCol = filas[index].querySelector(".col-total-horas");
-        if (tdTotalCol) tdTotalCol.innerText = `${suma.toFixed(1).replace('.0','')}h`;
     }
 }
 
