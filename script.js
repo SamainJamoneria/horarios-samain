@@ -257,6 +257,16 @@ function exportarPDFSemana(semId) {
     let bloque = document.getElementById(`bloque_${semId}`);
     if (!bloque) return;
 
+    // 1. Asignar dinámicamente el título del documento para que el PDF coja este nombre al guardarse
+    let tituloOriginalPagina = document.title;
+    let nombreSemanaActual = sem.titulo ? sem.titulo.trim() : 'Horario';
+    
+    if (sem.mostrarTotalPdf) {
+        document.title = nombreSemanaActual + ' - Total horas';
+    } else {
+        document.title = nombreSemanaActual;
+    }
+
     bloque.classList.add('imprimiendo-activo');
     if (sem.mostrarTotalPdf) {
         document.body.classList.add('exportar-total-activo');
@@ -269,6 +279,9 @@ function exportarPDFSemana(semId) {
         bloque.classList.remove('imprimiendo-activo');
         document.body.classList.remove('exportar-total-activo');
         bloque.querySelectorAll('.horas-container').forEach(el => el.classList.remove('horas-exportables-activo'));
+        
+        // Restaurar el título original de la página web
+        document.title = tituloOriginalPagina;
     }, 500);
 }
 
