@@ -392,13 +392,14 @@ function renderizar() {
 
         if (!sem.colapsado) {
             html += `
-            <div class="atajos-toolbar no-print" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; background: #f7fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <span style="font-size: 12px; font-weight: bold; color: #4a5568;">Atajos rápidos:</span>
-                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #edf2f7; border: 1px solid #cbd5e0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Libre</button>
-                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #edf2f7; border: 1px solid #cbd5e0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">10:00 a 16:00</button>
-                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #edf2f7; border: 1px solid #cbd5e0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">16:00 a 00:00</button>
+            <div class="atajos-toolbar no-print" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; background: #2d3748; padding: 8px; border-radius: 6px;">
+                <span style="font-size: 12px; font-weight: bold; color: #ffffff; width: 100%; margin-bottom: 2px;">Atajos rápidos:</span>
+                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #4a5568; color: #ffffff; border: 1px solid #718096; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 1; min-width: 80px;">Libre</button>
+                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #4a5568; color: #ffffff; border: 1px solid #718096; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 2; min-width: 120px;">10:00 a 16:00</button>
+                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #4a5568; color: #ffffff; border: 1px solid #718096; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 2; min-width: 120px;">16:00 a 00:00</button>
             </div>
             <div class="table-responsive">
+
                 <table>
                     <thead>
                         <tr>
