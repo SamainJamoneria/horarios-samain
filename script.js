@@ -355,7 +355,6 @@ async function importarPDFSemana(semId, event) {
             contenido.items.forEach(item => {
                 let texto = item.str.trim();
                 if (texto !== '') {
-                    // Guardamos posición vertical (y) y horizontal (x) para ordenar correctamente el PDF
                     itemsTexto.push({ str: texto, y: Math.round(item.transform[5]), x: Math.round(item.transform[4]) });
                 }
             });
@@ -365,17 +364,20 @@ async function importarPDFSemana(semId, event) {
         if (!sem) return;
 
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        const palabrasIgnorar = ['empleado', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 'acciones', 'total', 'nuevo', 'horario', 'semanal'];
+        
+        // Lista negra estricta de palabras que NUNCA pueden ser el nombre de un empleado
+        const palabrasIgnorar = [
+            'empleado', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 
+            'acciones', 'total', 'nuevo', 'horario', 'semanal', 'baja', 'libre', 'vacaciones', 'festivo'
+        ];
 
-        // Ordenar los textos de arriba a abajo (y descendente) y de izquierda a derecha (x ascendente)
         itemsTexto.sort((a, b) => {
             if (Math.abs(a.y - b.y) > 5) {
-                return b.y - a.y; // Líneas superiores primero
+                return b.y - a.y; 
             }
-            return a.x - b.x; // De izquierda a derecha
+            return a.x - b.x; 
         });
 
-        // Agrupar elementos por líneas horizontales (misma coordenada y aproximada)
         let lineasAgrupadas = [];
         let lineaActual = [];
         let ultimaY = null;
@@ -397,29 +399,25 @@ async function importarPDFSemana(semId, event) {
 
         let empleadosImportados = [];
 
-        // Procesar cada línea buscando un patrón de empleado + 7 días
         lineasAgrupadas.forEach(lineaItems => {
             let textosLinea = lineaItems.map(it => it.str);
             let primerTexto = textosLinea[0];
             let primerLower = primerTexto.toLowerCase();
 
-            // Filtrar para asegurar que el primer elemento es un nombre de empleado válido
-            let esCabeceraOBasura = (
-                palabrasIgnorar.includes(primerLower) ||
+            // Validación estricta para el nombre del empleado
+            let esNombreInvalido = (
+                palabrasIgnorar.some(palabra => primerLower.includes(palabra)) ||
                 primerTexto.includes(':') ||
                 /\d/.test(primerTexto) ||
                 primerTexto.toLowerCase().endsWith('h') ||
                 primerTexto.length < 2
             );
 
-            if (!esCabeceraOBasura) {
+            if (!esNombreInvalido) {
                 let nombreEmpleado = primerTexto;
                 let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
-                
-                // Los elementos restantes en esta misma línea (o distribuidos) son los turnos de la semana
                 let tokensTurnos = textosLinea.slice(1);
                 
-                // Si los turnos vienen limpios, los asignamos secuencialmente a los días
                 let diaIndex = 0;
                 let turnoAcumulado = '';
 
