@@ -117,12 +117,19 @@ function renderizarApp() {
         btnAddEmp.innerHTML = "+ Empleado";
         btnAddEmp.onclick = function() { agregarEmpleado(sIndex); };
 
+        let btnClrWeek = document.createElement("button");
+        btnClrWeek.className = "btn-clear-week";
+        btnClrWeek.innerHTML = "🧹 Borrar Datos";
+        btnClrWeek.title = "Borrar los turnos de esta semana";
+        btnClrWeek.onclick = function() { limpiarDatosSemana(sIndex); };
+
         let btnPdfWeek = document.createElement("button");
         btnPdfWeek.className = "btn-pdf-week";
         btnPdfWeek.innerHTML = "🖨️ PDF Semana";
         btnPdfWeek.onclick = function() { prepararPDFSemana(bloqueSemana, sem.titulo); };
 
         accionesHeader.appendChild(btnAddEmp);
+        accionesHeader.appendChild(btnClrWeek);
         accionesHeader.appendChild(btnPdfWeek);
 
         if (semanas.length > 1) {
@@ -312,8 +319,20 @@ function agregarSemana() {
     renderizarApp();
 }
 
+function limpiarDatosSemana(sIndex) {
+    let sem = semanas[sIndex];
+    if (confirm(`¿Seguro que quieres borrar todos los turnos introducidos en la semana "${sem.titulo}"?`)) {
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith(sem.id + "_emp-")) {
+                localStorage.removeItem(key);
+            }
+        });
+        renderizarApp();
+    }
+}
+
 function eliminarSemana(sIndex) {
-    if (confirm(`¿Seguro que quieres eliminar la semana "${semanas[sIndex].titulo}" y todos sus turnos?`)) {
+    if (confirm(`¿Seguro que quieres eliminar la semana "${semanas[sIndex].titulo}" por completo?`)) {
         let semId = semanas[sIndex].id;
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith(semId)) {
