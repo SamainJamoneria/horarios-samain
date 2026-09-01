@@ -363,43 +363,82 @@ async function importarPDFSemana(semId, event) {
         let sem = semanas.find(s => s.id === semId);
         if (!sem) return;
 
-        let datosEncontrados = 0;
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        let empleadosImportados = [];
+        let i = 0;
+        const posiblesNombres = ['pablo', 'daisy', 'gabri', 'fer', 'victoria', 'vivi', 'samuel', 'ana', 'carlos', 'maria'];
 
-        sem.empleados.forEach(emp => {
-            if (!emp.nombre) return;
-            let nombreEmp = emp.nombre.trim().toLowerCase();
+        while (i < lineasTexto.length) {
+            let textoActual = lineasTexto[i];
+            let textoLower = textoActual.toLowerCase();
+            let esNombre = posiblesNombres.some(n => textoLower === n || textoLower.includes(n));
 
-            let indexNombre = lineasTexto.findIndex(t => t.toLowerCase().includes(nombreEmp));
-            
-            if (indexNombre !== -1) {
-                let ventanaTurnos = lineasTexto.slice(indexNombre + 1, indexNombre + 15);
-                let diaIndex = 0;
+            if (esNombre && textoActual.length < 15) {
+                let nombreEmpleado = textoActual;
+                let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
                 
-                ventanaTurnos.forEach(itemTexto => {
-                    if (diaIndex < diasSemana.length) {
-                        let diaActual = diasSemana[diaIndex];
-                        if (
-                            itemTexto.toLowerCase().includes('libre') || 
-                            itemTexto.includes(':') || 
-                            itemTexto.match(/\d{1,2}[h.-]\d{2}/) ||
-                            itemTexto.match(/\d{1,2}\s*(?:a|-)\s*\d{1,2}/)
-                        ) {
-                            emp.dias[diaActual] = itemTexto;
-                            datosEncontrados++;
-                            diaIndex++;
-                        }
-                    }
-                });
-            }
-        });
+                let dIndex = 0;
+                let offset = 1;
+                
+                while (dIndex < 7 && (i + offset) < lineasTexto.length) {
+                    let itemSiguiente = lineasTexto[i + offset];
+                    let itemSiguienteLower = itemSiguiente.toLowerCase();
 
-        if (datosEncontrados > 0) {
+                    if (posiblesNombres.some(n => itemSiguienteLower === n)) {
+                        break;
+                    }
+
+                    if (
+                        itemSiguienteLower.includes('libre') || 
+                        itemSiguiente.includes(':') || 
+                        itemSiguiente.match(/\d{1,2}[h.-]\d{2}/) ||
+                        itemSiguiente.match(/\d{1,2}\s*(?:a|-)\s*\d{1,2}/)
+                    ) {
+                        let diaAsignar = diasSemana[dIndex];
+                        let valorFinalTurno = itemSiguiente;
+                        
+                        // Unimos si viene cortado (ej: "10:00 a" con "16:00")
+                        if ((i + offset + 1) < lineasTexto.length) {
+                            let proximoItem = lineasTexto[i + offset + 1];
+                            let proximoLower = proximoItem.toLowerCase();
+                            if (
+                                proximoItem.match(/^\d{2}:\d{2}/) || 
+                                proximoItem.match(/^\d{1,2}[:h]/) ||
+                                proximoItem.match(/^\d{1,2}\s*(?:a|-|h)/) ||
+                                proximoLower.includes('00') ||
+                                proximoItem.length <= 6
+                            ) {
+                                valorFinalTurno = itemSiguiente + ' ' + proximoItem;
+                                offset++;
+                            }
+                        }
+
+                        diasEmpleado[diaAsignar] = valorFinalTurno;
+                        dIndex++;
+                    }
+                    offset++;
+                }
+
+                empleadosImportados.push({
+                    id: 'emp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                    nombre: nombreEmpleado,
+                    dias: diasEmpleado,
+                    ocultoPdf: false
+                });
+
+                i += offset;
+            } else {
+                i++;
+            }
+        }
+
+        if (empleadosImportados.length > 0) {
+            sem.empleados = empleadosImportados;
             guardarDatos();
             renderizar();
-            alert(`¡PDF importado con éxito! Se han actualizado ${datosEncontrados} turnos automáticamente.`);
+            alert(`¡PDF importado con éxito! Se han clonado ${empleadosImportados.length} empleados con sus turnos.`);
         } else {
-            alert("Se ha leído el PDF, pero no se han encontrado coincidencias exactas con los nombres de los empleados de esta semana.");
+            alert("No se han podido extraer automáticamente los empleados y turnos de este formato de PDF.");
         }
 
     } catch (error) {
