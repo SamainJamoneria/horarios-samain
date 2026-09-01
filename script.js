@@ -365,87 +365,82 @@ async function importarPDFSemana(semId, event) {
 
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         let empleadosImportados = [];
-        let i = 0;
+        
+        // Buscamos dónde empiezan los nombres de los empleados omitiendo las cabeceras fijas
+        let indiceInicio = -1;
+        for (let i = 0; i < lineasTexto.length; i++) {
+            let txt = lineasTexto[i].toLowerCase();
+            // El primer empleado suele venir justo después de los días de la semana o la palabra "Empleado"
+            if ((txt === 'lunes' || txt === 'empleado') && i + 8 < lineasTexto.length) {
+                indiceInicio = i + 1;
+                // Si justo después vuelve a decir "Lunes" o cabeceras repetidas, avanzamos un poco más
+                while (indiceInicio < lineasTexto.length && (lineasTexto[indiceInicio].toLowerCase() === 'lunes' || lineasTexto[indiceInicio].toLowerCase() === 'martes')) {
+                    indiceInicio++;
+                }
+                break;
+            }
+        }
 
-        // Palabras clave que nos indican que NO es un nombre de empleado
-        const palabrasExcluidas = ['horario', 'semana', 'total', 'libre', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 'a', 'de'];
+        if (indiceInicio === -1) {
+            indiceInicio = 0; // Por si acaso, empezamos desde el principio si no encuentra la cabecera exacta
+        }
+
+        let i = indiceInicio;
+        const palabrasIgnorar = ['empleado', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 'acciones', 'total'];
 
         while (i < lineasTexto.length) {
-            let textoActual = lineasTexto[i];
-            let textoLower = textoActual.toLowerCase();
-
-            // Un texto candidato a nombre debe ser corto, empezar por mayúscula y no ser una palabra del sistema/días
-            let esCandidatoNombre = (
-                textoActual.length >= 2 && 
-                textoActual.length <= 15 && 
-                /^[A-ZÁÉÍÓÚÑ]/.test(textoActual) && 
-                !palabrasExcluidas.includes(textoLower) &&
-                !textoActual.includes(':') &&
-                !/\d/.test(textoActual)
-            );
-
-            if (esCandidatoNombre) {
-                let nombreEmpleado = textoActual;
+            let posibleNombre = lineasTexto[i];
+            
+            // Validamos que sea un nombre válido y no una etiqueta suelta
+            if (
+                posibleNombre.length >= 2 && 
+                !palabrasIgnorar.includes(posibleNombre.toLowerCase()) &&
+                !posibleNombre.includes(':') &&
+                !/\d/.test(posibleNombre)
+            ) {
+                let nombreEmpleado = posibleNombre;
                 let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
                 
-                let dIndex = 0;
-                let offset = 1;
-                
-                // Recorremos los siguientes elementos para rellenar los 7 días de la semana
-                while (dIndex < 7 && (i + offset) < lineasTexto.length) {
-                    let itemSiguiente = lineasTexto[i + offset];
-                    let itemSiguienteLower = itemSiguiente.toLowerCase();
+                let indexDia = 0;
+                let cursor = i + 1;
 
-                    // Si tropezamos con otro posible nombre o con un día de la semana, salimos de este empleado
-                    let esOtroNombre = (
-                        itemSiguiente.length >= 2 && 
-                        itemSiguiente.length <= 15 && 
-                        /^[A-ZÁÉÍÓÚÑ]/.test(itemSiguiente) && 
-                        !palabrasExcluidas.includes(itemSiguienteLower) &&
-                        !itemSiguiente.includes(':') &&
-                        !/\d/.test(itemSiguiente)
-                    );
+                // Capturamos exactamente los siguientes 7 bloques correspondientes a los días
+                while (indexDia < 7 && cursor < lineasTexto.length) {
+                    let itemDia = lineasTexto[cursor];
+                    let itemLower = itemDia.toLowerCase();
 
-                    if (esOtroNombre || diasSemana.map(d => d.toLowerCase()).includes(itemSiguienteLower)) {
+                    // Si nos topamos con otro nombre o palabra clave de cabecera, cortamos este empleado
+                    if (palabrasIgnorar.includes(itemLower) || (itemDia.length < 15 && /^[A-ZÁÉÍÓÚÑ]/.test(itemDia) && !itemDia.includes(':') && !/\d/.test(itemDia))) {
                         break;
                     }
 
-                    // Identificamos si el texto es un turno válido ("Libre", horas o formato con números)
-                    if (
-                        itemSiguienteLower.includes('libre') || 
-                        itemSiguiente.includes(':') || 
-                        /\d{1,2}/.test(itemSiguiente)
-                    ) {
-                        let turnoCelda = itemSiguiente;
+                    let turnoTexto = itemDia;
+                    
+                    // Si el turno está partido (ej: "10:00 a" y en la siguiente línea "16:00"), lo unimos
+                    if (cursor + 1 < lineasTexto.length) {
+                        let siguienteItem = lineasTexto[cursor + 1];
+                        let sigLower = siguienteItem.toLowerCase();
+                        if (
+                            siguienteItem === 'a' || siguienteItem === '-' || siguienteItem === 'hasta' ||
+                            /^\d{2}:\d{2}/.test(siguienteItem) ||
+                            /^\d{1,2}[:h.]/.test(siguienteItem)
+                        ) {
+                            turnoTexto += ' ' + siguienteItem;
+                            cursor++;
 
-                        // Verificamos si el turno viene partido en el siguiente fragmento (ej: "10:00 a" + "16:00")
-                        if ((i + offset + 1) < lineasTexto.length) {
-                            let proximo = lineasTexto[i + offset + 1];
-                            let proximoLower = proximo.toLowerCase();
-                            
-                            if (
-                                proximo === 'a' || proximo === '-' || proximo === 'hasta' ||
-                                /^\d{2}:\d{2}/.test(proximo) ||
-                                /^\d{1,2}[:h.]/.test(proximo)
-                            ) {
-                                turnoCelda += ' ' + proximo;
-                                offset++;
-
-                                // Comprobamos una vez más por si queda el cierre del rango (ej. la hora final)
-                                if ((i + offset + 1) < lineasTexto.length) {
-                                    let subProximo = lineasTexto[i + offset + 1];
-                                    if (/^\d{2}:\d{2}/.test(subProximo) || /^\d{1,2}[:h.]/.test(subProximo)) {
-                                        turnoCelda += ' ' + subProximo;
-                                        offset++;
-                                    }
+                            if (cursor + 1 < lineasTexto.length) {
+                                let tercerItem = lineasTexto[cursor + 1];
+                                if (/^\d{2}:\d{2}/.test(tercerItem) || /^\d{1,2}[:h.]/.test(tercerItem)) {
+                                    turnoTexto += ' ' + tercerItem;
+                                    cursor++;
                                 }
                             }
                         }
-
-                        diasEmpleado[diasSemana[dIndex]] = turnoCelda.trim();
-                        dIndex++;
                     }
-                    offset++;
+
+                    diasEmpleado[diasSemana[indexDia]] = turnoTexto.trim();
+                    indexDia++;
+                    cursor++;
                 }
 
                 empleadosImportados.push({
@@ -455,7 +450,7 @@ async function importarPDFSemana(semId, event) {
                     ocultoPdf: false
                 });
 
-                i += offset;
+                i = cursor; // Saltamos al siguiente empleado
             } else {
                 i++;
             }
@@ -465,9 +460,9 @@ async function importarPDFSemana(semId, event) {
             sem.empleados = empleadosImportados;
             guardarDatos();
             renderizar();
-            alert(`¡Importación completada! Se han cargado ${empleadosImportados.length} empleados correctamente.`);
+            alert(`¡Importación correcta! Se han cargado ${empleadosImportados.length} empleados con sus turnos.`);
         } else {
-            alert("No se han podido reconocer los turnos automáticamente en este PDF.");
+            alert("No se han podido leer los turnos de este PDF. Comprueba que el formato coincida.");
         }
 
     } catch (error) {
