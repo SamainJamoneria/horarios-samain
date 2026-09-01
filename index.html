@@ -36,9 +36,10 @@
         
         .semana-titulo-container { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 250px; }
         .semana-titulo-input { font-size: 1.05rem; font-weight: bold; color: #2c3e50; border: 1px solid transparent; background: transparent; padding: 3px 6px; border-radius: 4px; width: 100%; }
-        .semana-titulo-input:focus { border-color: #2980b9; background: white; outline: none; }
+        .semana-titulo-input:not(:disabled) { border-color: #2980b9; background: white; }
+        .semana-titulo-input:focus { outline: none; }
         
-        .semana-acciones-header { display: flex; gap: 6px; }
+        .semana-acciones-header { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-edit-title { background: #34495e; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
         .btn-del-week { background: #c0392b; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
         .btn-add-emp { background: #2980b9; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
@@ -88,7 +89,6 @@
             #pantalla-login { display: none !important; }
             .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container { display: none !important; }
             
-            /* Ocultar todos los bloques de semana EXCEPTO el que se mandó a imprimir */
             .semana-bloque { display: none !important; border: none; margin: 0; padding: 0; box-shadow: none; }
             .semana-bloque.imprimiendo-activo { display: block !important; }
             
