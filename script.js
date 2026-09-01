@@ -13,8 +13,34 @@ const PALETA_COLORES_SUAVES = [
     '#e2f0d9'  // Lima suave
 ];
 
-function obtenerColorSuave(indice) {
-    return PALETA_COLORES_SUAVES[indice % PALETA_COLORES_SUAVES.length];
+// Función para asignar color según el nombre del empleado a nivel global en todas las semanas
+function obtenerColorEmpleado(nombreEmpleado) {
+    if (!nombreEmpleado) nombreEmpleado = '';
+    let nombreTrim = nombreEmpleado.trim().toLowerCase();
+
+    // Creamos un mapa o listado único de nombres ya procesados para asignarles un color consistente
+    let mapaColores = new Map();
+    let colorIndex = 0;
+
+    // Recorremos todas las semanas y empleados ordenadamente para mantener la coherencia
+    semanas.forEach(sem => {
+        sem.empleados.forEach(emp => {
+            let n = emp.nombre ? emp.nombre.trim().toLowerCase() : '';
+            if (n && !mapaColores.has(n)) {
+                mapaColores.set(n, PALETA_COLORES_SUAVES[colorIndex % PALETA_COLORES_SUAVES.length]);
+                colorIndex++;
+            }
+        });
+    });
+
+    // Si el empleado ya tiene un color asignado en el mapa, lo devolvemos
+    if (mapaColores.has(nombreTrim)) {
+        return mapaColores.get(nombreTrim);
+    }
+
+    // Si es un empleado nuevo que aún no se ha registrado en el mapeo general
+    let colorAsignado = PALETA_COLORES_SUAVES[mapaColores.size % PALETA_COLORES_SUAVES.length];
+    return colorAsignado;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -164,6 +190,8 @@ function actualizarNombreEmpleado(semId, empId, nuevoNombre) {
         if (emp) {
             emp.nombre = nuevoNombre;
             guardarDatos();
+            // Renderizamos de nuevo para que el color se actualice al instante si coincide con otro empleado
+            renderizar();
         }
     }
 }
@@ -257,7 +285,6 @@ function exportarPDFSemana(semId) {
     let bloque = document.getElementById(`bloque_${semId}`);
     if (!bloque) return;
 
-    // 1. Asignar dinámicamente el título del documento para que el PDF coja este nombre al guardarse
     let tituloOriginalPagina = document.title;
     let nombreSemanaActual = sem.titulo ? sem.titulo.trim() : 'Horario';
     
@@ -280,7 +307,6 @@ function exportarPDFSemana(semId) {
         document.body.classList.remove('exportar-total-activo');
         bloque.querySelectorAll('.horas-container').forEach(el => el.classList.remove('horas-exportables-activo'));
         
-        // Restaurar el título original de la página web
         document.title = tituloOriginalPagina;
     }, 500);
 }
@@ -331,12 +357,12 @@ function renderizar() {
                     </thead>
                     <tbody>`;
 
-            sem.empleados.forEach((emp, index) => {
+            sem.empleados.forEach((emp) => {
                 let totalH = calcularHorasTotales(emp);
                 let claseOculto = emp.ocultoPdf ? 'fila-oculta-pdf' : '';
                 let iconoOjo = emp.ocultoPdf ? '🙈' : '👁️';
                 let estiloFila = emp.ocultoPdf ? 'opacity: 0.4;' : '';
-                let colorSuave = obtenerColorSuave(index);
+                let colorSuave = obtenerColorEmpleado(emp.nombre);
 
                 html += `
                         <tr class="${claseOculto}" style="${estiloFila} background-color: ${colorSuave};">
