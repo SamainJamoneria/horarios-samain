@@ -17,7 +17,6 @@ let empleados = JSON.parse(localStorage.getItem("samain_empleados")) || [
     { nombre: "Empleado 3", exportar: true, exportarHoras: false }
 ];
 
-// Compatibilidad con versiones anteriores si guardaban texto simple o faltaba la propiedad
 empleados = empleados.map(emp => {
     if (typeof emp === "string") {
         return { nombre: emp, exportar: true, exportarHoras: false };
