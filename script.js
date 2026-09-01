@@ -1,6 +1,6 @@
 let semanas = [];
 
-// Paleta de 9 colores suaves
+// Paleta de 9 colores suaves según tus indicaciones
 const PALETA_COLORES_SUAVES = [
     '#f8d7da', // Rojo suave
     '#fff3cd', // Amarillo suave
@@ -18,11 +18,9 @@ function obtenerColorEmpleado(nombreEmpleado) {
     if (!nombreEmpleado) nombreEmpleado = '';
     let nombreTrim = nombreEmpleado.trim().toLowerCase();
 
-    // Creamos un mapa o listado único de nombres ya procesados para asignarles un color consistente
     let mapaColores = new Map();
     let colorIndex = 0;
 
-    // Recorremos todas las semanas y empleados ordenadamente para mantener la coherencia
     semanas.forEach(sem => {
         sem.empleados.forEach(emp => {
             let n = emp.nombre ? emp.nombre.trim().toLowerCase() : '';
@@ -33,12 +31,10 @@ function obtenerColorEmpleado(nombreEmpleado) {
         });
     });
 
-    // Si el empleado ya tiene un color asignado en el mapa, lo devolvemos
     if (mapaColores.has(nombreTrim)) {
         return mapaColores.get(nombreTrim);
     }
 
-    // Si es un empleado nuevo que aún no se ha registrado en el mapeo general
     let colorAsignado = PALETA_COLORES_SUAVES[mapaColores.size % PALETA_COLORES_SUAVES.length];
     return colorAsignado;
 }
@@ -183,15 +179,25 @@ function eliminarEmpleado(semId, empId) {
     }
 }
 
-function actualizarNombreEmpleado(semId, empId, nuevoNombre) {
+function actualizarNombreEmpleado(semId, empId, nuevoNombre, inputElement) {
     let sem = semanas.find(s => s.id === semId);
     if (sem) {
         let emp = sem.empleados.find(e => e.id === empId);
         if (emp) {
             emp.nombre = nuevoNombre;
             guardarDatos();
-            // Renderizamos de nuevo para que el color se actualice al instante si coincide con otro empleado
-            renderizar();
+            
+            // Actualizamos el color de la fila al vuelo sin redibujar todo el DOM para no perder el foco
+            let fila = inputElement.closest('tr');
+            if (fila) {
+                let colorNuevo = obtenerColorEmpleado(nuevoNombre);
+                // Mantenemos la opacidad si estaba oculto para PDF
+                if (emp.ocultoPdf) {
+                    fila.style.backgroundColor = colorNuevo;
+                } else {
+                    fila.style.backgroundColor = colorNuevo;
+                }
+            }
         }
     }
 }
@@ -368,7 +374,7 @@ function renderizar() {
                         <tr class="${claseOculto}" style="${estiloFila} background-color: ${colorSuave};">
                             <td>
                                 <div class="empleado-cell" style="background: transparent;">
-                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value)" style="background: rgba(255,255,255,0.6);">
+                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value, this)" style="background: rgba(255,255,255,0.6);">
                                     <div class="horas-container">
                                         <span class="total-horas" id="horas_${sem.id}_${emp.id}">${totalH}h</span>
                                     </div>
