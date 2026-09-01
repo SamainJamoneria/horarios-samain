@@ -352,11 +352,11 @@ async function importarPDFSemana(semId, event) {
         for (let i = 1; i <= pdfDoc.numPages; i++) {
             let pagina = await pdfDoc.getPage(i);
             let contenido = await pagina.getTextContent();
-            // Guardamos tanto el texto como la posición vertical (y) para alinear filas si es necesario
             contenido.items.forEach(item => {
                 let texto = item.str.trim();
                 if (texto !== '') {
-                    itemsTexto.push({ str: texto, y: item.transform[5], x: item.transform[4] });
+                    // Guardamos posición vertical (y) y horizontal (x) para ordenar correctamente el PDF
+                    itemsTexto.push({ str: texto, y: Math.round(item.transform[5]), x: Math.round(item.transform[4]) });
                 }
             });
         }
@@ -366,97 +366,89 @@ async function importarPDFSemana(semId, event) {
 
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         const palabrasIgnorar = ['empleado', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 'acciones', 'total', 'nuevo', 'horario', 'semanal'];
-        
-        let lineasPlanas = itemsTexto.map(it => it.str);
-        let empleadosImportados = [];
-        
-        let i = 0;
-        // Buscamos el inicio de la tabla saltando la cabecera
-        while (i < lineasPlanas.length) {
-            let actual = lineasPlanas[i];
-            let actualLower = actual.toLowerCase();
 
-            // Detectamos una fila de empleado válida (texto que no sea cabecera, ni hora, ni número de horas totales como "40.5h")
-            let esNombreValido = (
-                actual.length >= 2 && 
-                !palabrasIgnorar.includes(actualLower) &&
-                !actual.includes(':') &&
-                !/\d/.test(actual) &&
-                !actual.toLowerCase().endsWith('h')
+        // Ordenar los textos de arriba a abajo (y descendente) y de izquierda a derecha (x ascendente)
+        itemsTexto.sort((a, b) => {
+            if (Math.abs(a.y - b.y) > 5) {
+                return b.y - a.y; // Líneas superiores primero
+            }
+            return a.x - b.x; // De izquierda a derecha
+        });
+
+        // Agrupar elementos por líneas horizontales (misma coordenada y aproximada)
+        let lineasAgrupadas = [];
+        let lineaActual = [];
+        let ultimaY = null;
+
+        itemsTexto.forEach(item => {
+            if (ultimaY === null || Math.abs(item.y - ultimaY) > 5) {
+                if (lineaActual.length > 0) {
+                    lineasAgrupadas.push(lineaActual);
+                }
+                lineaActual = [item];
+                ultimaY = item.y;
+            } else {
+                lineaActual.push(item);
+            }
+        });
+        if (lineaActual.length > 0) {
+            lineasAgrupadas.push(lineaActual);
+        }
+
+        let empleadosImportados = [];
+
+        // Procesar cada línea buscando un patrón de empleado + 7 días
+        lineasAgrupadas.forEach(lineaItems => {
+            let textosLinea = lineaItems.map(it => it.str);
+            let primerTexto = textosLinea[0];
+            let primerLower = primerTexto.toLowerCase();
+
+            // Filtrar para asegurar que el primer elemento es un nombre de empleado válido
+            let esCabeceraOBasura = (
+                palabrasIgnorar.includes(primerLower) ||
+                primerTexto.includes(':') ||
+                /\d/.test(primerTexto) ||
+                primerTexto.toLowerCase().endsWith('h') ||
+                primerTexto.length < 2
             );
 
-            if (esNombreValido) {
-                let nombreEmpleado = actual;
+            if (!esCabeceraOBasura) {
+                let nombreEmpleado = primerTexto;
                 let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
                 
-                let cursor = i + 1;
+                // Los elementos restantes en esta misma línea (o distribuidos) son los turnos de la semana
+                let tokensTurnos = textosLinea.slice(1);
+                
+                // Si los turnos vienen limpios, los asignamos secuencialmente a los días
                 let diaIndex = 0;
-                let turnosCapturados = [];
+                let turnoAcumulado = '';
 
-                // Recogemos elementos hasta completar los 7 días o toparnos con otro nombre / fin de lista
-                while (diaIndex < 7 && cursor < lineasPlanas.length) {
-                    let elemento = lineasPlanas[cursor];
-                    let elemLower = elemento.toLowerCase();
+                tokensTurnos.forEach((token) => {
+                    let tokenLower = token.toLowerCase();
+                    let esHora = token.includes(':') || /\d/.test(token) || tokenLower.includes('libre') || tokenLower.includes('baja');
 
-                    // Si encontramos el siguiente nombre de empleado o cabecera, paramos
-                    let esOtroNombre = (
-                        elemento.length >= 2 && 
-                        !palabrasIgnorar.includes(elemLower) &&
-                        !elemento.includes(':') &&
-                        !/\d/.test(elemento) &&
-                        !elemento.toLowerCase().endsWith('h') &&
-                        cursor > i + 1 // Asegurarnos de que avanzamos al menos un turno
-                    );
-
-                    if (esOtroNombre) {
-                        break;
-                    }
-
-                    // Comprobamos si el elemento parece un turno (contiene horas, "libre", "baja", etc.)
-                    let esTurno = (
-                        elemLower.includes('libre') || 
-                        elemLower.includes('baja') || 
-                        elemento.includes(':') || 
-                        /\d/.test(elemento)
-                    );
-
-                    if (esTurno) {
-                        let turnoTexto = elemento;
-
-                        // Unimos partes partidas del turno (ej: "10:00 a" + "16:00")
-                        if (cursor + 1 < lineasPlanas.length) {
-                            let siguiente = lineasPlanas[cursor + 1];
-                            if (
-                                siguiente === 'a' || siguiente === '-' || siguiente === 'hasta' ||
-                                /^\d{2}:\d{2}/.test(siguiente) ||
-                                /^\d{1,2}[:h.]/.test(siguiente)
-                            ) {
-                                turnoTexto += ' ' + siguiente;
-                                cursor++;
-
-                                if (cursor + 1 < lineasPlanas.length) {
-                                    let tercero = lineasPlanas[cursor + 1];
-                                    if (/^\d{2}:\d{2}/.test(tercero) || /^\d{1,2}[:h.]/.test(tercero)) {
-                                        turnoTexto += ' ' + tercero;
-                                        cursor++;
-                                    }
-                                }
+                    if (esHora) {
+                        if (turnoAcumulado !== '') {
+                            if (diaIndex < diasSemana.length) {
+                                diasEmpleado[diasSemana[diaIndex]] = turnoAcumulado.trim();
+                                diaIndex++;
                             }
+                            turnoAcumulado = '';
                         }
-
-                        // Asignamos al día correspondiente respetando el orden
-                        if (diaIndex < diasSemana.length) {
-                            diasEmpleado[diasSemana[diaIndex]] = turnoTexto.trim();
-                        }
-                        diaIndex++;
+                        turnoAcumulado = token;
+                    } else if (token === 'a' || token === '-' || token === 'hasta') {
+                        turnoAcumulado += ' ' + token;
                     } else {
-                        // Si hay un hueco vacío en el PDF, el texto se omite, así que avanzamos el día asignándolo vacío
-                        // Solo si no es una palabra basura
-                        if (!palabrasIgnorar.includes(elemLower) && elemento.length < 20) {
-                            diaIndex++;
+                        if (turnoAcumulado !== '') {
+                            turnoAcumulado += ' ' + token;
+                        } else {
+                            turnoAcumulado = token;
                         }
                     }
-                    cursor++;
+                });
+
+                if (turnoAcumulado !== '' && diaIndex < diasSemana.length) {
+                    diasEmpleado[diasSemana[diaIndex]] = turnoAcumulado.trim();
                 }
 
                 empleadosImportados.push({
@@ -465,12 +457,8 @@ async function importarPDFSemana(semId, event) {
                     dias: diasEmpleado,
                     ocultoPdf: false
                 });
-
-                i = cursor;
-            } else {
-                i++;
             }
-        }
+        });
 
         if (empleadosImportados.length > 0) {
             sem.empleados = empleadosImportados;
