@@ -6,6 +6,11 @@
     <title id="pagina-titulo">Horarios Samaín</title>
     <link rel="apple-touch-icon" href="icono.png">
     <link rel="icon" href="icono.png">
+    <!-- Librería PDF.js necesaria para importar los archivos PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 5px; color: #333; }
         
@@ -90,7 +95,7 @@
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
             #pantalla-login { display: none !important; }
-            .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container { display: none !important; }
+            .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container, .atajos-toolbar { display: none !important; }
             
             .semana-bloque { display: none !important; border: none; margin: 0; padding: 0; box-shadow: none; }
             .semana-bloque.imprimiendo-activo { display: block !important; }
@@ -109,55 +114,3 @@
         }
     </style>
 </head>
-<body>
-
-<div id="pantalla-login">
-    <div class="login-card">
-        <h3>Horarios Samaín</h3>
-        <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">Introduce la contraseña para acceder</p>
-        <input type="password" id="input-password" placeholder="Contraseña" autocomplete="current-password">
-        <button onclick="verificarPassword()">Entrar</button>
-    </div>
-</div>
-
-<div class="container" id="app-container">
-    <div class="global-controls">
-        <button class="btn-add-week" onclick="agregarSemana()">+ Añadir Semana</button>
-        <button onclick="limpiarTodo()">Borrar Todo General</button>
-    </div>
-
-    <div id="semanas-contenedor"></div>
-</div>
-
-<script>
-    const CLISECRETA = "1494";
-
-    function verificarPassword() {
-        let pass = document.getElementById("input-password").value;
-        if (pass === CLISECRETA) {
-            document.getElementById("pantalla-login").style.display = "none";
-            document.getElementById("app-container").style.display = "block";
-            sessionStorage.setItem("sesion_activa", "true");
-        } else {
-            alert("Contraseña incorrecta");
-            document.getElementById("input-password").value = "";
-        }
-    }
-
-    document.getElementById("input-password").addEventListener("keypress", function(event) {
-        if (event.key === "Enter") {
-            verificarPassword();
-        }
-    });
-
-    window.onload = function() {
-        if (sessionStorage.getItem("sesion_activa") === "true") {
-            document.getElementById("pantalla-login").style.display = "none";
-            document.getElementById("app-container").style.display = "block";
-        }
-    };
-</script>
-
-<script src="script.js"></script>
-</body>
-</html>
