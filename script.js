@@ -336,14 +336,15 @@ async function importarPDFSemana(semId, event) {
     try {
         let lectorArray = await archivo.arrayBuffer();
         let pdfDoc = await pdfjsLib.getDocument({ data: lectorArray }).promise;
-        let textoCompletoItems = [];
+        let lineasTexto = [];
 
         for (let i = 1; i <= pdfDoc.numPages; i++) {
             let pagina = await pdfDoc.getPage(i);
             let contenido = await pagina.getTextContent();
             contenido.items.forEach(item => {
-                if (item.str.trim() !== '') {
-                    textoCompletoItems.push(item.str.trim());
+                let texto = item.str.trim();
+                if (texto !== '') {
+                    lineasTexto.push(texto);
                 }
             });
         }
@@ -351,14 +352,48 @@ async function importarPDFSemana(semId, event) {
         let sem = semanas.find(s => s.id === semId);
         if (!sem) return;
 
-        if (textoCompletoItems.length > 0) {
-            alert("PDF leído correctamente. Se han extraído los datos de texto.");
+        let datosEncontrados = 0;
+        const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+        sem.empleados.forEach(emp => {
+            if (!emp.nombre) return;
+            let nombreEmp = emp.nombre.trim().toLowerCase();
+
+            let indexNombre = lineasTexto.findIndex(t => t.toLowerCase().includes(nombreEmp));
+            
+            if (indexNombre !== -1) {
+                let ventanaTurnos = lineasTexto.slice(indexNombre + 1, indexNombre + 15);
+                let diaIndex = 0;
+                
+                ventanaTurnos.forEach(itemTexto => {
+                    if (diaIndex < diasSemana.length) {
+                        let diaActual = diasSemana[diaIndex];
+                        if (
+                            itemTexto.toLowerCase().includes('libre') || 
+                            itemTexto.includes(':') || 
+                            itemTexto.match(/\d{1,2}[h.-]\d{2}/) ||
+                            itemTexto.match(/\d{1,2}\s*(?:a|-)\s*\d{1,2}/)
+                        ) {
+                            emp.dias[diaActual] = itemTexto;
+                            datosEncontrados++;
+                            diaIndex++;
+                        }
+                    }
+                });
+            }
+        });
+
+        if (datosEncontrados > 0) {
+            guardarDatos();
+            renderizar();
+            alert(`¡PDF importado con éxito! Se han actualizado ${datosEncontrados} turnos automáticamente.`);
+        } else {
+            alert("Se ha leído el PDF, pero no se han encontrado coincidencias exactas con los nombres de los empleados de esta semana.");
         }
 
-        renderizar();
     } catch (error) {
         console.error(error);
-        alert("Hubo un error al leer el archivo PDF.");
+        alert("Hubo un error al procesar el archivo PDF.");
     } finally {
         event.target.value = '';
     }
@@ -391,7 +426,7 @@ function renderizar() {
                     <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">Borrar Datos</button>
                     <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">+ Empleado</button>
                     <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">PDF Semana</button>
-                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">Importar PDF</button>
+                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Importar PDF</button>
                     <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
                     <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">Eliminar Semana</button>
                 </div>`;
@@ -408,7 +443,6 @@ function renderizar() {
                 <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #ffffff; color: #1a202c; border: 1px solid #cbd5e0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 2; min-width: 120px;">16:00 a 00:00</button>
             </div>
             <div class="table-responsive">
-
                 <table>
                     <thead>
                         <tr>
