@@ -29,7 +29,7 @@ empleados = empleados.map(emp => {
 
 const tbody = document.getElementById("tabla-horarios");
 
-function calcularHorasTexto(texto) {
+function calcularHorasLinea(texto) {
     if (!texto) return 0;
     let t = texto.trim().toLowerCase();
     if (t === "libre" || t === "v" || t === "" || t.includes("libranza")) return 0;
@@ -52,6 +52,17 @@ function calcularHorasTexto(texto) {
         return diffMin > 0 ? diffMin / 60 : 0;
     }
     return 0;
+}
+
+function calcularHorasTexto(textoCompleto) {
+    if (!textoCompleto) return 0;
+    // Divide por saltos de línea para calcular horarios partidos correctamente
+    let lineas = textoCompleto.split(/\r?\n/);
+    let totalSuma = 0;
+    lineas.forEach(linea => {
+        totalSuma += calcularHorasLinea(linea);
+    });
+    return totalSuma;
 }
 
 function cargarTabla() {
@@ -112,16 +123,17 @@ function cargarTabla() {
             let tdDia = document.createElement("td");
             let key = `emp-${index}-dia-${dia}`;
             let valorGuardado = localStorage.getItem(key) || "";
-            let inputDia = document.createElement("input");
-            inputDia.type = "text";
-            inputDia.placeholder = "9-17";
-            inputDia.value = valorGuardado;
-            inputDia.setAttribute("data-key", key);
-            inputDia.oninput = function() {
+            
+            // Usamos textarea para permitir saltos de línea (Enter)
+            let textareaDia = document.createElement("textarea");
+            textareaDia.placeholder = "9-13\n16-20";
+            textareaDia.value = valorGuardado;
+            textareaDia.setAttribute("data-key", key);
+            textareaDia.oninput = function() {
                 guardarDato(this);
                 actualizarTotalFila(index);
             };
-            tdDia.appendChild(inputDia);
+            tdDia.appendChild(textareaDia);
             tr.appendChild(tdDia);
         }
 
