@@ -49,7 +49,7 @@ function agregarSemana() {
         colapsado: false,
         mostrarTotalPdf: false,
         empleados: [
-            { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false }
+            { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
         ]
     });
     guardarDatos();
@@ -109,7 +109,7 @@ function toggleColapsarSemana(semId) {
     if (sem) {
         sem.colapsado = !sem.colapsado;
         if (sem.colapsado) {
-            sem.editandoTitulo = false; // Cierra la edición al colapsar
+            sem.editandoTitulo = false;
         }
         guardarDatos();
         renderizar();
