@@ -29,15 +29,24 @@
         button.btn-pdf { background-color: #e74c3c; }
         button.btn-add { background-color: #2980b9; }
         button:active { opacity: 0.8; }
+
+        /* Barra de turnos rápidos */
+        .quick-turns-container {
+            display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; 
+            background: #eef2f7; padding: 8px; border-radius: 5px; border: 1px solid #dce3ec;
+        }
+        .quick-turns-container span { width: 100%; font-size: 0.75rem; font-weight: bold; color: #2c3e50; margin-bottom: 2px; }
+        .btn-quick { background-color: #34495e; color: white; border: none; padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: normal; cursor: pointer; flex: 1; min-width: 80px; text-align: center; }
+        .btn-quick:hover { background-color: #2c3e50; }
+
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         
         table { width: 100%; border-collapse: collapse; margin-bottom: 10px; min-width: 750px; table-layout: auto; }
         th, td { border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 0.75rem; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; padding: 6px 4px; }
         
-        /* Proporción de columnas */
         th:first-child, td:first-child { width: 16%; min-width: 130px; }
-        th:not(:first-child):not(.no-print), td:not(:first-child):not(.no-print) { width: 10%; }
+        th:not(:first-child):not(.no-print), td:not(:first-child):not(.no-print) { width: 11.4%; }
 
         .empleado-cell { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px; }
         .empleado-input { font-weight: bold; border: 1px solid #ccc; border-radius: 3px; padding: 4px 6px; text-align: left; flex: 1; font-size: 0.75rem; width: 100%; box-sizing: border-box; }
@@ -59,6 +68,7 @@
             font-family: Arial, sans-serif;
             line-height: 1.2;
         }
+        td textarea:focus { border-color: #27ae60; outline: none; background-color: #f0fdf4; box-shadow: 0 0 4px rgba(39, 174, 96, 0.4); }
         
         .btn-eye { background: transparent; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px; min-width: auto; flex: 0; }
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; min-width: auto; flex: 0; }
@@ -72,11 +82,11 @@
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
             #pantalla-login { display: none !important; }
-            .controls, button, .no-print, .btn-eye-horas { display: none !important; }
+            .controls, .quick-turns-container, button, .no-print, .btn-eye-horas { display: none !important; }
             
             tr.fila-oculta-pdf { display: none !important; }
             
-            body:not(.exportar-total-activo) .col-total-horas { display: none !important; }
+            /* Si el check maestro NO está activo, oculta las horas junto al nombre al imprimir */
             body:not(.exportar-total-activo) .horas-container:not(.horas-exportables-activo) { display: none !important; }
 
             table { font-size: 0.85rem; width: 100%; min-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -109,10 +119,10 @@
         <button class="btn-pdf" onclick="prepararPDF()">Guardar / PDF</button>
     </div>
 
-    <div class="export-toggle-container no-print">
+     <div class="export-toggle-container no-print">
         <label>
             <input type="checkbox" id="chk-exportar-total" onchange="toggleExportarTotal(this)"> 
-            Incluir columna general de Total de Horas en el PDF
+            Mostrar total de horas en el PDF
         </label>
     </div>
 
@@ -128,7 +138,6 @@
                     <th>Viernes</th>
                     <th>Sábado</th>
                     <th>Domingo</th>
-                    <th class="col-total-horas" style="display:none;">Total Horas</th>
                     <th class="no-print" style="width: 60px;">Acciones</th>
                 </tr>
             </thead>
@@ -169,11 +178,9 @@
     function toggleExportarTotal(checkbox) {
         if (checkbox.checked) {
             document.body.classList.add("exportar-total-activo");
-            document.querySelectorAll(".col-total-horas").forEach(el => el.style.display = "");
             document.title = "Horarios Samaín - Total horas";
         } else {
             document.body.classList.remove("exportar-total-activo");
-            document.querySelectorAll(".col-total-horas").forEach(el => el.style.display = "none");
             document.title = "Horarios Samaín";
         }
     }
@@ -182,11 +189,9 @@
         let chk = document.getElementById("chk-exportar-total");
         if (chk.checked) {
             document.body.classList.add("exportar-total-activo");
-            document.querySelectorAll(".col-total-horas").forEach(el => el.style.display = "");
             document.title = "Horarios Samaín - Total horas";
         } else {
             document.body.classList.remove("exportar-total-activo");
-            document.querySelectorAll(".col-total-horas").forEach(el => el.style.display = "none");
             document.title = "Horarios Samaín";
         }
         window.print();
