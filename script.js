@@ -1,6 +1,6 @@
 let semanas = [];
 
-// Paleta de 9 colores suaves según tus indicaciones
+// Paleta de 9 colores suaves
 const PALETA_COLORES_SUAVES = [
     '#f8d7da', // Rojo suave
     '#fff3cd', // Amarillo suave
