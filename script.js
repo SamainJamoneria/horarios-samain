@@ -366,61 +366,86 @@ async function importarPDFSemana(semId, event) {
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         let empleadosImportados = [];
         let i = 0;
-        const posiblesNombres = ['pablo', 'daisy', 'gabri', 'fer', 'victoria', 'vivi', 'samuel', 'ana', 'carlos', 'maria'];
+
+        // Palabras clave que nos indican que NO es un nombre de empleado
+        const palabrasExcluidas = ['horario', 'semana', 'total', 'libre', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 'a', 'de'];
 
         while (i < lineasTexto.length) {
             let textoActual = lineasTexto[i];
             let textoLower = textoActual.toLowerCase();
-            let esNombre = posiblesNombres.some(n => textoLower === n || textoLower.includes(n));
 
-            if (esNombre && textoActual.length < 15) {
+            // Un texto candidato a nombre debe ser corto, empezar por mayúscula y no ser una palabra del sistema/días
+            let esCandidatoNombre = (
+                textoActual.length >= 2 && 
+                textoActual.length <= 15 && 
+                /^[A-ZÁÉÍÓÚÑ]/.test(textoActual) && 
+                !palabrasExcluidas.includes(textoLower) &&
+                !textoActual.includes(':') &&
+                !/\d/.test(textoActual)
+            );
+
+            if (esCandidatoNombre) {
                 let nombreEmpleado = textoActual;
                 let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
                 
                 let dIndex = 0;
                 let offset = 1;
                 
+                // Recorremos los siguientes elementos para rellenar los 7 días de la semana
                 while (dIndex < 7 && (i + offset) < lineasTexto.length) {
                     let itemSiguiente = lineasTexto[i + offset];
                     let itemSiguienteLower = itemSiguiente.toLowerCase();
 
-                    // Si el siguiente elemento es otro nombre, paramos
-                    if (posiblesNombres.some(n => itemSiguienteLower === n)) {
+                    // Si tropezamos con otro posible nombre o con un día de la semana, salimos de este empleado
+                    let esOtroNombre = (
+                        itemSiguiente.length >= 2 && 
+                        itemSiguiente.length <= 15 && 
+                        /^[A-ZÁÉÍÓÚÑ]/.test(itemSiguiente) && 
+                        !palabrasExcluidas.includes(itemSiguienteLower) &&
+                        !itemSiguiente.includes(':') &&
+                        !/\d/.test(itemSiguiente)
+                    );
+
+                    if (esOtroNombre || diasSemana.map(d => d.toLowerCase()).includes(itemSiguienteLower)) {
                         break;
                     }
 
-                    // Capturamos el turno combinando elementos cercanos si están fragmentados
-                    let acumuladoTurno = itemSiguiente;
-                    let saltosConsumidos = 0;
+                    // Identificamos si el texto es un turno válido ("Libre", horas o formato con números)
+                    if (
+                        itemSiguienteLower.includes('libre') || 
+                        itemSiguiente.includes(':') || 
+                        /\d{1,2}/.test(itemSiguiente)
+                    ) {
+                        let turnoCelda = itemSiguiente;
 
-                    // Miramos hasta 3 elementos hacia adelante para reconstruir bloques como "10:00" + "a" + "16:00" o turnos partidos
-                    for (let step = 1; step <= 3; step++) {
-                        if ((i + offset + step) < lineasTexto.length) {
-                            let proximo = lineasTexto[i + offset + step];
+                        // Verificamos si el turno viene partido en el siguiente fragmento (ej: "10:00 a" + "16:00")
+                        if ((i + offset + 1) < lineasTexto.length) {
+                            let proximo = lineasTexto[i + offset + 1];
                             let proximoLower = proximo.toLowerCase();
                             
-                            // Si tropezamos con otro nombre o un día de la semana, paramos de agrupar
-                            if (posiblesNombres.some(n => proximoLower === n) || diasSemana.map(d=>d.toLowerCase()).includes(proximoLower)) {
-                                break;
-                            }
-
-                            // Si el siguiente fragmento forma parte de la hora (ej: "a", "-", "16:00", números)
                             if (
                                 proximo === 'a' || proximo === '-' || proximo === 'hasta' ||
-                                proximo.match(/^\d{1,2}[:h.]?\d{0,2}/) ||
-                                proximoLower.includes('libre')
+                                /^\d{2}:\d{2}/.test(proximo) ||
+                                /^\d{1,2}[:h.]/.test(proximo)
                             ) {
-                                acumuladoTurno += ' ' + proximo;
-                                saltosConsumidos = step;
-                            } else {
-                                break;
+                                turnoCelda += ' ' + proximo;
+                                offset++;
+
+                                // Comprobamos una vez más por si queda el cierre del rango (ej. la hora final)
+                                if ((i + offset + 1) < lineasTexto.length) {
+                                    let subProximo = lineasTexto[i + offset + 1];
+                                    if (/^\d{2}:\d{2}/.test(subProximo) || /^\d{1,2}[:h.]/.test(subProximo)) {
+                                        turnoCelda += ' ' + subProximo;
+                                        offset++;
+                                    }
+                                }
                             }
                         }
-                    }
 
-                    diasEmpleado[diasSemana[dIndex]] = acumuladoTurno.trim();
-                    offset += 1 + saltosConsumidos;
-                    dIndex++;
+                        diasEmpleado[diasSemana[dIndex]] = turnoCelda.trim();
+                        dIndex++;
+                    }
+                    offset++;
                 }
 
                 empleadosImportados.push({
@@ -440,9 +465,9 @@ async function importarPDFSemana(semId, event) {
             sem.empleados = empleadosImportados;
             guardarDatos();
             renderizar();
-            alert(`¡PDF importado con éxito! Se han clonado ${empleadosImportados.length} empleados con sus turnos correctamente.`);
+            alert(`¡Importación completada! Se han cargado ${empleadosImportados.length} empleados correctamente.`);
         } else {
-            alert("No se han podido extraer automáticamente los turnos de este formato de PDF.");
+            alert("No se han podido reconocer los turnos automáticamente en este PDF.");
         }
 
     } catch (error) {
