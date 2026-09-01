@@ -343,7 +343,7 @@ function renderizar() {
                     <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${sem.editandoTitulo ? 'Guardar' : 'Editar'}</button>
                     <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">Borrar Datos</button>
                     <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">+ Empleado</button>
-                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">PDF Semana</button>
+                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">Crear PDF</button>
                     <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">Eliminar Semana</button>
                 </div>`;
         }
