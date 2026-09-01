@@ -133,6 +133,15 @@ function limpiarSemana(semId) {
     }
 }
 
+function borrarTodoGeneral() {
+    if (confirm("¿Estás seguro de que quieres borrar absolutamente todas las semanas y datos de la aplicación?")) {
+        semanas = [];
+        celdasActivasPorSemana = {};
+        localStorage.removeItem('horarios_semanas_v2');
+        agregarSemanaPorDefecto();
+    }
+}
+
 function toggleEditarTitulo(semId) {
     let sem = semanas.find(s => s.id === semId);
     if (sem) {
