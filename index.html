@@ -27,25 +27,21 @@
         .login-card input { width: 100%; padding: 10px; margin-bottom: 12px; box-sizing: border-box; text-align: center; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
         .login-card button { width: 100%; padding: 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        .container { width: 100%; max-width: 100%; margin: auto; background: white; padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; display: none; }
+        .container { width: 100%; max-width: 100%; margin: auto; background: white; padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; display: block; }
         
         .global-controls { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #eef2f7; padding: 10px; border-radius: 6px; border: 1px solid #dce3ec; }
         button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; min-width: 130px; }
         button.btn-add-week { background-color: #8e44ad; }
         button:active { opacity: 0.8; }
 
-        /* Contenedor de cada semana independiente */
         .semana-bloque { background: #fafbfc; border: 1px solid #ccd1d9; border-radius: 6px; padding: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        
         .semana-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
-        
         .semana-titulo-container { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 250px; }
         .semana-titulo-input { font-size: 1.05rem; font-weight: bold; color: #2c3e50; border: 1px solid transparent; background: transparent; padding: 3px 6px; border-radius: 4px; width: 100%; }
         .semana-titulo-input:not(:disabled) { border-color: #2980b9; background: white; }
         .semana-titulo-input:focus { outline: none; }
         
         .btn-toggle-collapse { background: #7f8c8d; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; min-width: auto; }
-
         .semana-acciones-header { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-edit-title { background: #34495e; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
         .btn-clear-week { background: #2ecc71; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
@@ -54,63 +50,58 @@
         .btn-pdf-week { background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
 
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        
         table { width: 100%; border-collapse: collapse; margin-bottom: 5px; min-width: 750px; table-layout: auto; }
         th, td { border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 0.75rem; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; padding: 6px 4px; }
-        
         th:first-child, td:first-child { width: 16%; min-width: 130px; }
         th:not(:first-child):not(.no-print), td:not(:first-child):not(.no-print) { width: 11.4%; }
 
         .empleado-cell { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px; }
         .empleado-input { font-weight: bold; border: 1px solid #ccc; border-radius: 3px; padding: 4px 6px; text-align: left; flex: 1; font-size: 0.75rem; width: 100%; box-sizing: border-box; }
-        
         .horas-container { display: flex; align-items: center; gap: 2px; background: #fff; padding: 2px 4px; border-radius: 3px; border: 1px solid #ddd; flex-shrink: 0; }
         .total-horas { font-size: 0.7rem; color: #555; white-space: nowrap; font-weight: bold; }
-        .btn-eye-horas { background: transparent; border: none; cursor: pointer; font-size: 0.75rem; padding: 0; min-width: auto; line-height: 1; }
         
         td textarea { 
-            width: 95%; 
-            height: 38px; 
-            padding: 4px 2px; 
-            text-align: center; 
-            border: 1px solid #ccc; 
-            border-radius: 3px; 
-            font-size: 0.75rem; 
-            box-sizing: border-box; 
-            resize: none; 
-            font-family: Arial, sans-serif;
-            line-height: 1.2;
+            width: 95%; height: 38px; padding: 4px 2px; text-align: center; 
+            border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem; 
+            box-sizing: border-box; resize: none; font-family: Arial, sans-serif; line-height: 1.2; 
         }
         
         .btn-eye { background: transparent; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px; min-width: auto; flex: 0; }
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; min-width: auto; flex: 0; }
-        .btn-delete:hover { background: #c0392b; }
-        
         .export-toggle-container { margin-top: 5px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #e9ecef; }
         
         @page { size: landscape; margin: 8mm; }
-
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
             #pantalla-login { display: none !important; }
             .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container, .atajos-toolbar { display: none !important; }
-            
             .semana-bloque { display: none !important; border: none; margin: 0; padding: 0; box-shadow: none; }
             .semana-bloque.imprimiendo-activo { display: block !important; }
-            
             tr.fila-oculta-pdf { display: none !important; }
-            
             body:not(.exportar-total-activo) .semana-bloque.imprimiendo-activo .horas-container:not(.horas-exportables-activo) { display: none !important; }
-
-            table { font-size: 0.85rem; width: 100%; min-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            table { font-size: 0.85rem; width: 100%; min-width: 100%; }
             th, td { padding: 8px 4px; }
             th:first-child, td:first-child { width: 18%; }
-            th { background-color: #2c3e50 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            th { background-color: #2c3e50 !important; color: white !important; }
             td input.empleado-input { border: none; background: transparent !important; font-weight: bold; font-size: 0.85rem; }
             td textarea { border: none; background: transparent !important; font-weight: bold; font-size: 0.85rem; resize: none; height: auto; overflow: visible; white-space: pre-wrap; }
         }
     </style>
 </head>
+<body>
+
+    <div class="container">
+        <!-- Controles globales para añadir nuevas semanas -->
+        <div class="global-controls no-print">
+            <button class="btn-add-week" onclick="agregarSemana()">+ Nueva Semana</button>
+        </div>
+
+        <!-- CONTENEDOR PRINCIPAL DONDE SE RENDERIZAN LAS SEMANAS -->
+        <div id="semanas-contenedor"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
