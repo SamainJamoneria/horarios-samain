@@ -1,33 +1,36 @@
 const coloresSuaves = [
-    "#d4efdf", // Verde muy suave
-    "#d6eaf8", // Azul muy suave
-    "#fcf3cf", // Amarillo muy suave
-    "#ebdef0", // Morado muy suave
-    "#f9ebea", // Rojo/Rosa muy suave
-    "#e8f8f5", // Turquesa muy suave
-    "#fef9e7", // Naranja muy suave
-    "#fae5d3", // Marrón muy suave
-    "#fadbd8", // Rojo muy suave
-    "#eaeded"  // Negro/Gris muy suave
+    "#d4efdf", "#d6eaf8", "#fcf3cf", "#ebdef0", "#f9ebea", 
+    "#e8f8f5", "#fef9e7", "#fae5d3", "#fadbd8", "#eaeded"
 ];
 
-let empleados = JSON.parse(localStorage.getItem("samain_empleados")) || [
-    { nombre: "Empleado 1", exportar: true, exportarHoras: false },
-    { nombre: "Empleado 2", exportar: true, exportarHoras: false },
-    { nombre: "Empleado 3", exportar: true, exportarHoras: false }
+// Estructura de semanas almacenadas
+let semanas = JSON.parse(localStorage.getItem("samain_semanas")) || [
+    {
+        id: "semana_principal",
+        titulo: "Horario Semanal - Samaín",
+        exportarTotal: false,
+        empleados: [
+            { nombre: "Empleado 1", exportar: true, exportarHoras: false },
+            { nombre: "Empleado 2", exportar: true, exportarHoras: false },
+            { nombre: "Empleado 3", exportar: true, exportarHoras: false }
+        ]
+    }
 ];
 
-empleados = empleados.map(emp => {
-    if (typeof emp === "string") {
-        return { nombre: emp, exportar: true, exportarHoras: false };
-    }
-    if (emp.exportarHoras === undefined) {
-        emp.exportarHoras = false;
-    }
-    return emp;
+// Asegurar compatibilidad de datos antiguos
+semanas = semanas.map(sem => {
+    if (!sem.id) sem.id = "sem_" + Math.random().toString(36.substring(2, 9));
+    if (!sem.titulo) sem.titulo = "Horario Semanal - Samaín";
+    if (sem.exportarTotal === undefined) sem.exportarTotal = false;
+    sem.empleados = sem.empleados.map(emp => {
+        if (typeof emp === "string") return { nombre: emp, exportar: true, exportarHoras: false };
+        if (emp.exportarHoras === undefined) emp.exportarHoras = false;
+        return emp;
+    });
+    return sem;
 });
 
-const tbody = document.getElementById("tabla-horarios");
+const contenedorSemanas = document.getElementById("semanas-contenedor");
 
 function calcularHorasLinea(texto) {
     if (!texto) return 0;
@@ -45,9 +48,7 @@ function calcularHorasLinea(texto) {
         let totalMinInicio = hInicio * 60 + mInicio;
         let totalMinFin = hFin * 60 + mFin;
 
-        if (totalMinFin < totalMinInicio) {
-            totalMinFin += 24 * 60;
-        }
+        if (totalMinFin < totalMinInicio) totalMinFin += 24 * 60;
         let diffMin = totalMinFin - totalMinInicio;
         return diffMin > 0 ? diffMin / 60 : 0;
     }
@@ -58,171 +59,325 @@ function calcularHorasTexto(textoCompleto) {
     if (!textoCompleto) return 0;
     let lineas = textoCompleto.split(/\r?\n/);
     let totalSuma = 0;
-    lineas.forEach(linea => {
-        totalSuma += calcularHorasLinea(linea);
-    });
+    lineas.forEach(linea => { totalSuma += calcularHorasLinea(linea); });
     return totalSuma;
 }
 
-function cargarTabla() {
-    tbody.innerHTML = "";
+function guardarDatos() {
+    localStorage.setItem("samain_semanas", JSON.stringify(semanas));
+}
 
-    empleados.forEach((emp, index) => {
-        let tr = document.createElement("tr");
-        let colorFondo = coloresSuaves[index % coloresSuaves.length];
-        tr.style.backgroundColor = colorFondo;
+function renderizarApp() {
+    contenedorSemanas.innerHTML = "";
 
-        if (!emp.exportar) {
-            tr.classList.add("fila-oculta-pdf");
+    semanas.forEach((sem, sIndex) => {
+        let bloqueSemana = document.createElement("div");
+        bloqueSemana.className = "semana-bloque";
+        bloqueSemana.setAttribute("data-semana-id", sem.id);
+
+        // Cabecera de la semana (Título + Acciones)
+        let headerDiv = document.createElement("div");
+        headerDiv.className = "semana-header";
+
+        let titleCont = document.createElement("div");
+        titleCont.className = "semana-titulo-container";
+
+        let inputTitulo = document.createElement("input");
+        inputTitulo.type = "text";
+        inputTitulo.className = "semana-titulo-input";
+        inputTitulo.value = sem.titulo;
+        inputTitulo.disabled = true; // Bloqueado hasta hacer clic en el lápiz
+        inputTitulo.oninput = function() {
+            sem.titulo = this.value;
+            guardarDatos();
+        };
+
+        let btnEditTitle = document.createElement("button");
+        btnEditTitle.className = "btn-edit-title";
+        btnEditTitle.innerHTML = "✏️ Editar";
+        btnEditTitle.title = "Editar nombre de la semana";
+        btnEditTitle.onclick = function() {
+            if (inputTitulo.disabled) {
+                inputTitulo.disabled = false;
+                inputTitulo.focus();
+                btnEditTitle.innerHTML = "💾 Guardar";
+            } else {
+                inputTitulo.disabled = true;
+                btnEditTitle.innerHTML = "✏️ Editar";
+                guardarDatos();
+            }
+        };
+
+        titleCont.appendChild(inputTitulo);
+        titleCont.appendChild(btnEditTitle);
+        headerDiv.appendChild(titleCont);
+
+        // Botones de acción de la semana
+        let accionesHeader = document.createElement("div");
+        accionesHeader.className = "semana-acciones-header";
+
+        let btnAddEmp = document.createElement("button");
+        btnAddEmp.className = "btn-add-emp";
+        btnAddEmp.innerHTML = "+ Empleado";
+        btnAddEmp.onclick = function() { agregarEmpleado(sIndex); };
+
+        let btnPdfWeek = document.createElement("button");
+        btnPdfWeek.className = "btn-pdf-week";
+        btnPdfWeek.innerHTML = "🖨️ PDF Semana";
+        btnPdfWeek.onclick = function() { prepararPDFSemana(bloqueSemana, sem.titulo); };
+
+        accionesHeader.appendChild(btnAddEmp);
+        accionesHeader.appendChild(btnPdfWeek);
+
+        // Permitir eliminar semana solo si hay más de una creada
+        if (semanas.length > 1) {
+            let btnDelWeek = document.createElement("button");
+            btnDelWeek.className = "btn-del-week";
+            btnDelWeek.innerHTML = "🗑️ Eliminar Semana";
+            btnDelWeek.onclick = function() { eliminarSemana(sIndex); };
+            accionesHeader.appendChild(btnDelWeek);
         }
 
-        let totalHorasSemanales = 0;
-        for (let dia = 1; dia <= 7; dia++) {
-            let key = `emp-${index}-dia-${dia}`;
-            let val = localStorage.getItem(key) || "";
-            totalHorasSemanales += calcularHorasTexto(val);
-        }
+        headerDiv.appendChild(accionesHeader);
+        bloqueSemana.appendChild(headerDiv);
 
-        let tdNombre = document.createElement("td");
-        let divCell = document.createElement("div");
-        divCell.className = "empleado-cell";
+        // Tabla de la semana
+        let tableResponsive = document.createElement("div");
+        tableResponsive.className = "table-responsive";
 
-        let inputNombre = document.createElement("input");
-        inputNombre.type = "text";
-        inputNombre.className = "empleado-input";
-        inputNombre.value = emp.nombre;
-        inputNombre.oninput = function() { actualizarNombre(this, index); };
+        let table = document.createElement("table");
+        let thead = document.createElement("thead");
+        thead.innerHTML = `
+            <tr>
+                <th>Empleado</th>
+                <th>Lunes</th>
+                <th>Martes</th>
+                <th>Miércoles</th>
+                <th>Jueves</th>
+                <th>Viernes</th>
+                <th>Sábado</th>
+                <th>Domingo</th>
+                <th class="no-print" style="width: 60px;">Acciones</th>
+            </tr>
+        `;
+        table.appendChild(thead);
 
-        let divHoras = document.createElement("div");
-        divHoras.className = "horas-container";
-        if (emp.exportarHoras) {
-            divHoras.classList.add("horas-exportables-activo");
-        }
+        let tbody = document.createElement("tbody");
 
-        let spanHoras = document.createElement("span");
-        spanHoras.className = "total-horas";
-        spanHoras.innerText = `${totalHorasSemanales.toFixed(1).replace('.0','')}h`;
+        sem.empleados.forEach((emp, eIndex) => {
+            let tr = document.createElement("tr");
+            let colorFondo = coloresSuaves[eIndex % coloresSuaves.length];
+            tr.style.backgroundColor = colorFondo;
 
-        let btnOjoHoras = document.createElement("button");
-        btnOjoHoras.className = "btn-eye-horas";
-        btnOjoHoras.innerHTML = emp.exportarHoras ? "👁️" : "🔒";
-        btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF (haz clic para ocultar)" : "Horas ocultas en PDF (haz clic para mostrar)";
-        btnOjoHoras.onclick = function() { toggleExportarHorasEmpleado(index); };
+            if (!emp.exportar) {
+                tr.classList.add("fila-oculta-pdf");
+            }
 
-        divHoras.appendChild(spanHoras);
-        divHoras.appendChild(btnOjoHoras);
+            let totalHorasSemanales = 0;
+            for (let dia = 1; dia <= 7; dia++) {
+                let val = localStorage.getItem(`${sem.id}_emp-${eIndex}-dia-${dia}`) || "";
+                totalHorasSemanales += calcularHorasTexto(val);
+            }
 
-        divCell.appendChild(inputNombre);
-        divCell.appendChild(divHoras);
-        tdNombre.appendChild(divCell);
-        tr.appendChild(tdNombre);
+            let tdNombre = document.createElement("td");
+            let divCell = document.createElement("div");
+            divCell.className = "empleado-cell";
 
-        for (let dia = 1; dia <= 7; dia++) {
-            let tdDia = document.createElement("td");
-            let key = `emp-${index}-dia-${dia}`;
-            let valorGuardado = localStorage.getItem(key) || "";
-            
-            let textareaDia = document.createElement("textarea");
-            textareaDia.placeholder = "9-17";
-            textareaDia.value = valorGuardado;
-            textareaDia.setAttribute("data-key", key);
-            textareaDia.oninput = function() {
-                guardarDato(this);
-                actualizarTotalFila(index);
+            let inputNombre = document.createElement("input");
+            inputNombre.type = "text";
+            inputNombre.className = "empleado-input";
+            inputNombre.value = emp.nombre;
+            inputNombre.oninput = function() {
+                emp.nombre = this.value;
+                guardarDatos();
             };
 
-            tdDia.appendChild(textareaDia);
-            tr.appendChild(tdDia);
-        }
+            let divHoras = document.createElement("div");
+            divHoras.className = "horas-container";
+            if (emp.exportarHoras) {
+                divHoras.classList.add("horas-exportables-activo");
+            }
 
-        let tdAccion = document.createElement("td");
-        tdAccion.className = "no-print";
-        tdAccion.style.whiteSpace = "nowrap";
+            let spanHoras = document.createElement("span");
+            spanHoras.className = "total-horas";
+            spanHoras.innerText = `${totalHorasSemanales.toFixed(1).replace('.0','')}h`;
 
-        let iconoOjo = emp.exportar ? "👁️" : "🔒";
-        let btnOjo = document.createElement("button");
-        btnOjo.className = "btn-eye";
-        btnOjo.innerHTML = iconoOjo;
-        btnOjo.title = emp.exportar ? "Empleado visible en PDF (haz clic para ocultar)" : "Empleado oculto en PDF (haz clic para mostrar)";
-        btnOjo.onclick = function() { toggleExportarEmpleado(index); };
+            let btnOjoHoras = document.createElement("button");
+            btnOjoHoras.className = "btn-eye-horas";
+            btnOjoHoras.innerHTML = emp.exportarHoras ? "👁️" : "🔒";
+            btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF" : "Horas ocultas en PDF";
+            btnOjoHoras.onclick = function() {
+                emp.exportarHoras = !emp.exportarHoras;
+                guardarDatos();
+                renderizarApp();
+            };
 
-        let btnDel = document.createElement("button");
-        btnDel.className = "btn-delete";
-        btnDel.innerHTML = "❌";
-        btnDel.onclick = function() { eliminarEmpleado(index); };
+            divHoras.appendChild(spanHoras);
+            divHoras.appendChild(btnOjoHoras);
+            divCell.appendChild(inputNombre);
+            divCell.appendChild(divHoras);
+            tdNombre.appendChild(divCell);
+            tr.appendChild(tdNombre);
 
-        tdAccion.appendChild(btnOjo);
-        tdAccion.appendChild(btnDel);
-        tr.appendChild(tdAccion);
+            // Días de la semana (1 al 7)
+            for (let dia = 1; dia <= 7; dia++) {
+                let tdDia = document.createElement("td");
+                let key = `${sem.id}_emp-${eIndex}-dia-${dia}`;
+                let valorGuardado = localStorage.getItem(key) || "";
+                
+                let textareaDia = document.createElement("textarea");
+                textareaDia.placeholder = "9-17";
+                textareaDia.value = valorGuardado;
+                textareaDia.setAttribute("data-key", key);
+                textareaDia.oninput = function() {
+                    localStorage.setItem(key, this.value);
+                    actualizarTotalFilaLocal(tr, sIndex, eIndex);
+                };
 
-        tbody.appendChild(tr);
+                tdDia.appendChild(textareaDia);
+                tr.appendChild(tdDia);
+            }
+
+            let tdAccion = document.createElement("td");
+            tdAccion.className = "no-print";
+            tdAccion.style.whiteSpace = "nowrap";
+
+            let btnOjo = document.createElement("button");
+            btnOjo.className = "btn-eye";
+            btnOjo.innerHTML = emp.exportar ? "👁️" : "🔒";
+            btnOjo.title = emp.exportar ? "Empleado visible en PDF" : "Empleado oculto en PDF";
+            btnOjo.onclick = function() {
+                emp.exportar = !emp.exportar;
+                guardarDatos();
+                renderizarApp();
+            };
+
+            let btnDel = document.createElement("button");
+            btnDel.className = "btn-delete";
+            btnDel.innerHTML = "❌";
+            btnDel.onclick = function() { eliminarEmpleado(sIndex, eIndex); };
+
+            tdAccion.appendChild(btnOjo);
+            tdAccion.appendChild(btnDel);
+            tr.appendChild(tdAccion);
+
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        tableResponsive.appendChild(table);
+        bloqueSemana.appendChild(tableResponsive);
+
+        // Checkbox opcional de mostrar horas junto al nombre para esta semana concreta
+        let toggleContainer = document.createElement("div");
+        toggleContainer.className = "export-toggle-container no-print";
+        let chkId = `chk_total_${sem.id}`;
+        toggleContainer.innerHTML = `
+            <label>
+                <input type="checkbox" id="${chkId}" ${sem.exportarTotal ? "checked" : ""}> 
+                Mostrar total de horas junto al nombre en el PDF de esta semana
+            </label>
+        `;
+        toggleContainer.querySelector("input").onchange = function() {
+            sem.exportarTotal = this.checked;
+            guardarDatos();
+        };
+        bloqueSemana.appendChild(toggleContainer);
+
+        contenedorSemanas.appendChild(bloqueSemana);
     });
 }
 
-function actualizarTotalFila(index) {
+function actualizarTotalFilaLocal(trFila, sIndex, eIndex) {
     let suma = 0;
+    let semId = semanas[sIndex].id;
     for (let dia = 1; dia <= 7; dia++) {
-        let key = `emp-${index}-dia-${dia}`;
-        let val = localStorage.getItem(key) || "";
+        let val = localStorage.getItem(`${semId}_emp-${eIndex}-dia-${dia}`) || "";
         suma += calcularHorasTexto(val);
     }
-    let filas = tbody.querySelectorAll("tr");
-    if (filas[index]) {
-        let span = filas[index].querySelector(".total-horas");
-        if (span) span.innerText = `${suma.toFixed(1).replace('.0','')}h`;
-    }
+    let span = trFila.querySelector(".total-horas");
+    if (span) span.innerText = `${suma.toFixed(1).replace('.0','')}h`;
 }
 
-function actualizarNombre(input, index) {
-    empleados[index].nombre = input.value;
-    localStorage.setItem("samain_empleados", JSON.stringify(empleados));
+function agregarSemana() {
+    // Duplicar la estructura de la última semana existente o crear una por defecto
+    let ultimaSemana = semanas[semanas.length - 1];
+    let nuevaId = "sem_" + Math.random().toString(36).substring(2, 9);
+    
+    // Copiar empleados pero limpiar los valores de los días de los inputs en localStorage si se desea o clonarlos
+    let nuevosEmpleados = ultimaSemana.empleados.map(emp => ({
+        nombre: emp.nombre,
+        exportar: emp.exportar,
+        exportarHoras: emp.exportarHoras
+    }));
+
+    semanas.push({
+        id: nuevaId,
+        titulo: "Nuevo Horario Semanal - Samaín",
+        exportarTotal: false,
+        empleados: nuevosEmpleados
+    });
+
+    guardarDatos();
+    renderizarApp();
 }
 
-function toggleExportarEmpleado(index) {
-    empleados[index].exportar = !empleados[index].exportar;
-    localStorage.setItem("samain_empleados", JSON.stringify(empleados));
-    cargarTabla();
-}
-
-function toggleExportarHorasEmpleado(index) {
-    empleados[index].exportarHoras = !empleados[index].exportarHoras;
-    localStorage.setItem("samain_empleados", JSON.stringify(empleados));
-    cargarTabla();
-}
-
-function agregarEmpleado() {
-    let nuevoNombre = `Empleado ${empleados.length + 1}`;
-    empleados.push({ nombre: nuevoNombre, exportar: true, exportarHoras: false });
-    localStorage.setItem("samain_empleados", JSON.stringify(empleados));
-    cargarTabla();
-}
-
-function eliminarEmpleado(index) {
-    if (confirm(`¿Seguro que quieres eliminar a ${empleados[index].nombre} y sus turnos?`)) {
-        for (let dia = 1; dia <= 7; dia++) {
-            localStorage.removeItem(`emp-${index}-dia-${dia}`);
-        }
-        empleados.splice(index, 1);
-        localStorage.setItem("samain_empleados", JSON.stringify(empleados));
-        cargarTabla();
-    }
-}
-
-function guardarDato(elemento) {
-    let key = elemento.getAttribute("data-key");
-    let valor = elemento.value;
-    localStorage.setItem(key, valor);
-}
-
-function limpiarHorario() {
-    if (confirm("¿Seguro que quieres borrar todos los turnos de la pantalla?")) {
+function eliminarSemana(sIndex) {
+    if (confirm(`¿Seguro que quieres eliminar la semana "${semanas[sIndex].titulo}" y todos sus turnos?`)) {
+        let semId = semanas[sIndex].id;
+        // Limpiar localStorage de los turnos de esta semana
         Object.keys(localStorage).forEach(key => {
-            if (key.includes("-dia-")) {
+            if (key.startsWith(semId)) {
                 localStorage.removeItem(key);
             }
         });
-        cargarTabla();
+        semanas.splice(sIndex, 1);
+        guardarDatos();
+        renderizarApp();
     }
 }
 
-cargarTabla();
+function agregarEmpleado(sIndex) {
+    let sem = semanas[sIndex];
+    sem.empleados.push({ nombre: `Empleado ${sem.empleados.length + 1}`, exportar: true, exportarHoras: false });
+    guardarDatos();
+    renderizarApp();
+}
+
+function eliminarEmpleado(sIndex, eIndex) {
+    let sem = semanas[sIndex];
+    if (confirm(`¿Seguro que quieres eliminar a ${sem.empleados[eIndex].nombre}?`)) {
+        for (let dia = 1; dia <= 7; dia++) {
+            localStorage.removeItem(`${sem.id}_emp-${eIndex}-dia-${dia}`);
+        }
+        sem.empleados.splice(eIndex, 1);
+        guardarDatos();
+        renderizarApp();
+    }
+}
+
+function prepararPDFSemana(bloqueSemanaElemento, tituloSemana) {
+    // Marcar esta semana específica para impresión
+    document.querySelectorAll(".semana-bloque").forEach(b => b.classList.remove("imprimiendo-activo"));
+    bloqueSemanaElemento.classList.add("imprimiendo-activo");
+
+    // Comprobar si el checkbox de total activo de esta semana está marcado
+    let chk = bloqueSemanaElemento.querySelector("input[type='checkbox']");
+    if (chk && chk.checked) {
+        document.body.classList.add("exportar-total-activo");
+    } else {
+        document.body.classList.remove("exportar-total-activo");
+    }
+
+    document.title = tituloSemana;
+    window.print();
+}
+
+function limpiarTodo() {
+    if (confirm("¿Seguro que quieres borrar absolutamente todas las semanas y turnos guardados?")) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+renderizarApp();
