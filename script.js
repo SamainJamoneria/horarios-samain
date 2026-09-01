@@ -314,7 +314,6 @@ function renderizar() {
                                     <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value)">
                                     <div class="horas-container">
                                         <span class="total-horas" id="horas_${sem.id}_${emp.id}">${totalH}h</span>
-                                        <button class="btn-eye-horas" onclick="toggleOcultoPdf('${sem.id}', '${emp.id}')" title="Mostrar/Ocultar en PDF">${iconoOjo}</button>
                                     </div>
                                 </div>
                             </td>`;
@@ -328,7 +327,8 @@ function renderizar() {
                 });
 
                 html += `
-                            <td class="no-print">
+                            <td class="no-print" style="display: flex; gap: 4px; justify-content: center; align-items: center; border: none; height: 100%;">
+                                <button class="btn-eye" onclick="toggleOcultoPdf('${sem.id}', '${emp.id}')" title="Mostrar/Ocultar en PDF">${iconoOjo}</button>
                                 <button class="btn-delete" onclick="eliminarEmpleado('${sem.id}', '${emp.id}')">X</button>
                             </td>
                         </tr>`;
