@@ -108,6 +108,9 @@ function toggleColapsarSemana(semId) {
     let sem = semanas.find(s => s.id === semId);
     if (sem) {
         sem.colapsado = !sem.colapsado;
+        if (sem.colapsado) {
+            sem.editandoTitulo = false; // Cierra la edición al colapsar
+        }
         guardarDatos();
         renderizar();
     }
@@ -262,7 +265,7 @@ function renderizar() {
     semanas.forEach(sem => {
         html += `
         <div class="semana-bloque" id="bloque_${sem.id}">
-            <div class="semana-header">
+            <div class="semana-header" style="margin-bottom: ${sem.colapsado ? '0' : '8px'};">
                 <div class="semana-titulo-container">
                     <button class="btn-toggle-collapse" onclick="toggleColapsarSemana('${sem.id}')" title="Contraer / Expandir">
                         ${sem.colapsado ? '▼' : '▲'}
@@ -270,15 +273,20 @@ function renderizar() {
                     <input type="text" class="semana-titulo-input" value="${sem.titulo}" 
                         oninput="actualizarTituloSemana('${sem.id}', this.value)" 
                         ${sem.editandoTitulo ? '' : 'disabled'}>
-                </div>
+                </div>`;
+
+        if (!sem.colapsado) {
+            html += `
                 <div class="semana-acciones-header">
                     <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${sem.editandoTitulo ? 'Guardar' : 'Editar'}</button>
                     <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">Borrar Datos</button>
                     <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">+ Empleado</button>
                     <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">PDF Semana</button>
                     <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">Eliminar Semana</button>
-                </div>
-            </div>`;
+                </div>`;
+        }
+
+        html += `</div>`;
 
         if (!sem.colapsado) {
             html += `
