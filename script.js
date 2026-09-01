@@ -28,7 +28,6 @@ empleados = empleados.map(emp => {
 });
 
 const tbody = document.getElementById("tabla-horarios");
-let ultimaCasillaActiva = null; 
 
 function calcularHorasLinea(texto) {
     if (!texto) return 0;
@@ -107,7 +106,7 @@ function cargarTabla() {
         let btnOjoHoras = document.createElement("button");
         btnOjoHoras.className = "btn-eye-horas";
         btnOjoHoras.innerHTML = emp.exportarHoras ? "👁️" : "🔒";
-        btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF (haz clic para ocultar individualmente)" : "Horas ocultas en PDF (haz clic para mostrar individualmente)";
+        btnOjoHoras.title = emp.exportarHoras ? "Horas visibles en PDF (haz clic para ocultar)" : "Horas ocultas en PDF (haz clic para mostrar)";
         btnOjoHoras.onclick = function() { toggleExportarHorasEmpleado(index); };
 
         divHoras.appendChild(spanHoras);
@@ -127,12 +126,7 @@ function cargarTabla() {
             textareaDia.placeholder = "9-17";
             textareaDia.value = valorGuardado;
             textareaDia.setAttribute("data-key", key);
-            
-            textareaDia.onfocus = function() {
-                ultimaCasillaActiva = this;
-            };
             textareaDia.oninput = function() {
-                ultimaCasillaActiva = this;
                 guardarDato(this);
                 actualizarTotalFila(index);
             };
@@ -163,21 +157,6 @@ function cargarTabla() {
 
         tbody.appendChild(tr);
     });
-}
-
-function aplicarTurnoRapido(turnoTexto) {
-    if (!ultimaCasillaActiva) {
-        alert("Primero haz clic en la casilla de algún día del empleado donde quieras poner el turno.");
-        return;
-    }
-    ultimaCasillaActiva.value = turnoTexto;
-    guardarDato(ultimaCasillaActiva);
-    
-    let row = ultimaCasillaActiva.closest("tr");
-    let rowIndex = Array.from(tbody.querySelectorAll("tr")).indexOf(row);
-    if (rowIndex !== -1) {
-        actualizarTotalFila(rowIndex);
-    }
 }
 
 function actualizarTotalFila(index) {
