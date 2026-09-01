@@ -1,5 +1,22 @@
 let semanas = [];
 
+// Paleta de 9 colores suaves predefinidos
+const PALETA_COLORES_SUAVES = [
+    '#f8d7da', // Rojo suave
+    '#fff3cd', // Amarillo suave
+    '#d4edda', // Verde suave
+    '#d1ecf1', // Cian suave
+    '#e2d9f3', // Morado suave
+    '#fce8e6', // Naranja suave
+    '#e8f4f8', // Azul grisáceo suave
+    '#fbe5f2', // Rosa suave
+    '#e2f0d9'  // Lima suave
+];
+
+function obtenerColorSuave(indice) {
+    return PALETA_COLORES_SUAVES[indice % PALETA_COLORES_SUAVES.length];
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     cargarDatos();
     if (semanas.length === 0) {
@@ -32,9 +49,9 @@ function agregarSemanaPorDefecto() {
         colapsado: false,
         mostrarTotalPdf: false,
         empleados: [
-            { id: 'emp_1', nombre: 'Empleado 1', color: '#3498db', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
-            { id: 'emp_2', nombre: 'Empleado 2', color: '#e67e22', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
-            { id: 'emp_3', nombre: 'Empleado 3', color: '#2ecc71', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false }
+            { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
+            { id: 'emp_2', nombre: 'Empleado 2', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
+            { id: 'emp_3', nombre: 'Empleado 3', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false }
         ]
     });
     guardarDatos();
@@ -49,7 +66,7 @@ function agregarSemana() {
         colapsado: false,
         mostrarTotalPdf: false,
         empleados: [
-            { id: 'emp_1', nombre: 'Empleado 1', color: '#3498db', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
+            { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
         ]
     });
     guardarDatos();
@@ -120,13 +137,9 @@ function agregarEmpleado(semId) {
     let sem = semanas.find(s => s.id === semId);
     if (sem) {
         let nuevoNum = sem.empleados.length + 1;
-        const coloresDisponibles = ['#3498db', '#e67e22', '#2ecc71', '#9b59b6', '#e74c3c', '#1abc9c', '#f1c40f'];
-        let colorAleatorio = coloresDisponibles[Math.floor(Math.random() * coloresDisponibles.length)];
-        
         sem.empleados.push({
             id: 'emp_' + Date.now(),
             nombre: `Empleado ${nuevoNum}`,
-            color: colorAleatorio,
             dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' },
             ocultoPdf: false
         });
@@ -151,18 +164,6 @@ function actualizarNombreEmpleado(semId, empId, nuevoNombre) {
         if (emp) {
             emp.nombre = nuevoNombre;
             guardarDatos();
-        }
-    }
-}
-
-function actualizarColorEmpleado(semId, empId, nuevoColor) {
-    let sem = semanas.find(s => s.id === semId);
-    if (sem) {
-        let emp = sem.empleados.find(e => e.id === empId);
-        if (emp) {
-            emp.color = nuevoColor;
-            guardarDatos();
-            renderizar();
         }
     }
 }
@@ -317,19 +318,18 @@ function renderizar() {
                     </thead>
                     <tbody>`;
 
-            sem.empleados.forEach(emp => {
+            sem.empleados.forEach((emp, index) => {
                 let totalH = calcularHorasTotales(emp);
                 let claseOculto = emp.ocultoPdf ? 'fila-oculta-pdf' : '';
                 let iconoOjo = emp.ocultoPdf ? '🙈' : '👁️';
                 let estiloFila = emp.ocultoPdf ? 'opacity: 0.4;' : '';
-                let colorEmp = emp.color || '#3498db';
+                let colorSuave = obtenerColorSuave(index);
 
                 html += `
-                        <tr class="${claseOculto}" style="${estiloFila}">
-                            <td style="border-left: 5px solid ${colorEmp};">
-                                <div class="empleado-cell">
-                                    <input type="color" value="${colorEmp}" onchange="actualizarColorEmpleado('${sem.id}', '${emp.id}', this.value)" title="Cambiar color" style="width: 20px; height: 20px; border: none; background: none; cursor: pointer; padding: 0;">
-                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value)">
+                        <tr class="${claseOculto}" style="${estiloFila} background-color: ${colorSuave};">
+                            <td>
+                                <div class="empleado-cell" style="background: transparent;">
+                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value)" style="background: rgba(255,255,255,0.6);">
                                     <div class="horas-container">
                                         <span class="total-horas" id="horas_${sem.id}_${emp.id}">${totalH}h</span>
                                     </div>
@@ -340,7 +340,7 @@ function renderizar() {
                     let valorDia = emp.dias[dia] || '';
                     html += `
                             <td>
-                                <textarea oninput="actualizarTurno('${sem.id}', '${emp.id}', '${dia}', this.value)">${valorDia}</textarea>
+                                <textarea oninput="actualizarTurno('${sem.id}', '${emp.id}', '${dia}', this.value)" style="background: rgba(255,255,255,0.7);">${valorDia}</textarea>
                             </td>`;
                 });
 
