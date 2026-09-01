@@ -1,16 +1,16 @@
 let semanas = [];
-let celdasActivasPorSemana = {}; // Guarda la última celda enfocada por cada semana
+let celdasActivasPorSemana = {}; 
 
 const PALETA_COLORES_SUAVES = [
-    '#f8d7da', // Rojo suave
-    '#fff3cd', // Amarillo suave
-    '#d4edda', // Verde suave
-    '#f5e6d3', // Marrón suave
-    '#e2e2e2', // Negro suave / Gris oscuro muy suave
-    '#fce8e6', // Naranja suave
-    '#e8f4f8', // Azul grisáceo suave
-    '#fbe5f2', // Rosa suave
-    '#e2f0d9'  // Lima suave
+    '#f8d7da', 
+    '#fff3cd', 
+    '#d4edda', 
+    '#f5e6d3', 
+    '#e2e2e2', 
+    '#fce8e6', 
+    '#e8f4f8', 
+    '#fbe5f2', 
+    '#e2f0d9'  
 ];
 
 function obtenerColorEmpleado(nombreEmpleado) {
@@ -84,6 +84,7 @@ function agregarSemanaPorDefecto() {
         editandoTitulo: false,
         colapsado: false,
         mostrarTotalPdf: false,
+        atajosOcultos: false,
         empleados: [
             { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
             { id: 'emp_2', nombre: 'Empleado 2', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
@@ -101,6 +102,7 @@ function agregarSemana() {
         editandoTitulo: false,
         colapsado: false,
         mostrarTotalPdf: false,
+        atajosOcultos: false,
         empleados: [
             { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
         ]
@@ -166,6 +168,15 @@ function toggleColapsarSemana(semId) {
         if (sem.colapsado) {
             sem.editandoTitulo = false;
         }
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function toggleAtajos(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.atajosOcultos = !sem.atajosOcultos;
         guardarDatos();
         renderizar();
     }
@@ -435,12 +446,27 @@ function renderizar() {
         html += `</div>`;
 
         if (!sem.colapsado) {
+            let atajosOcultos = sem.atajosOcultos || false;
+
             html += `
-            <div class="atajos-toolbar no-print" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; background: #ffd700; padding: 8px; border-radius: 6px; border: 1px solid #e2c000;">
-                <span style="font-size: 12px; font-weight: bold; color: #1a202c; width: 100%; margin-bottom: 2px; display: flex; align-items: center; gap: 4px;">⚡ Atajos rápidos:</span>
-                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #ffffff; color: #1a202c; border: 1px solid #cbd5e0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 1; min-width: 80px;">Libre</button>
-                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #ffffff; color: #1a202c; border: 1px solid #cbd5e0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 2; min-width: 120px;">10:00 a 16:00</button>
-                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #ffffff; color: #1a202c; border: 1px solid #cbd5e0; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; flex: 2; min-width: 120px;">16:00 a 00:00</button>
+            <div class="atajos-toolbar no-print" style="margin-bottom: 8px; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; ${atajosOcultos ? '' : 'margin-bottom: 6px;'}">
+                    <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;">⚡ Atajos rápidos:</span>
+                    <button type="button" onclick="toggleAtajos('${sem.id}')" style="background: transparent; border: none; color: #3b82f6; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0; min-width: auto; flex: unset;">
+                        ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
+                    </button>
+                </div>`;
+
+            if (!atajosOcultos) {
+                html += `
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 1; min-width: 70px;">Libre</button>
+                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 2; min-width: 110px;">10:00 a 16:00</button>
+                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 2; min-width: 110px;">16:00 a 00:00</button>
+                </div>`;
+            }
+
+            html += `
             </div>
             <div class="table-responsive">
                 <table>
