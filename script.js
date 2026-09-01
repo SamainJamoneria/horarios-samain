@@ -1,12 +1,12 @@
 let semanas = [];
 
-// Paleta de 9 colores suaves predefinidos
+// Paleta de 9 colores suaves
 const PALETA_COLORES_SUAVES = [
     '#f8d7da', // Rojo suave
     '#fff3cd', // Amarillo suave
     '#d4edda', // Verde suave
-    '#d1ecf1', // Cian suave
-    '#e2d9f3', // Morado suave
+    '#f5e6d3', // Marrón suave
+    '#e2e2e2', // Negro suave / Gris oscuro muy suave
     '#fce8e6', // Naranja suave
     '#e8f4f8', // Azul grisáceo suave
     '#fbe5f2', // Rosa suave
