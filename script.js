@@ -384,39 +384,43 @@ async function importarPDFSemana(semId, event) {
                     let itemSiguiente = lineasTexto[i + offset];
                     let itemSiguienteLower = itemSiguiente.toLowerCase();
 
+                    // Si el siguiente elemento es otro nombre, paramos
                     if (posiblesNombres.some(n => itemSiguienteLower === n)) {
                         break;
                     }
 
-                    if (
-                        itemSiguienteLower.includes('libre') || 
-                        itemSiguiente.includes(':') || 
-                        itemSiguiente.match(/\d{1,2}[h.-]\d{2}/) ||
-                        itemSiguiente.match(/\d{1,2}\s*(?:a|-)\s*\d{1,2}/)
-                    ) {
-                        let diaAsignar = diasSemana[dIndex];
-                        let valorFinalTurno = itemSiguiente;
-                        
-                        // Unimos si viene cortado (ej: "10:00 a" con "16:00")
-                        if ((i + offset + 1) < lineasTexto.length) {
-                            let proximoItem = lineasTexto[i + offset + 1];
-                            let proximoLower = proximoItem.toLowerCase();
+                    // Capturamos el turno combinando elementos cercanos si están fragmentados
+                    let acumuladoTurno = itemSiguiente;
+                    let saltosConsumidos = 0;
+
+                    // Miramos hasta 3 elementos hacia adelante para reconstruir bloques como "10:00" + "a" + "16:00" o turnos partidos
+                    for (let step = 1; step <= 3; step++) {
+                        if ((i + offset + step) < lineasTexto.length) {
+                            let proximo = lineasTexto[i + offset + step];
+                            let proximoLower = proximo.toLowerCase();
+                            
+                            // Si tropezamos con otro nombre o un día de la semana, paramos de agrupar
+                            if (posiblesNombres.some(n => proximoLower === n) || diasSemana.map(d=>d.toLowerCase()).includes(proximoLower)) {
+                                break;
+                            }
+
+                            // Si el siguiente fragmento forma parte de la hora (ej: "a", "-", "16:00", números)
                             if (
-                                proximoItem.match(/^\d{2}:\d{2}/) || 
-                                proximoItem.match(/^\d{1,2}[:h]/) ||
-                                proximoItem.match(/^\d{1,2}\s*(?:a|-|h)/) ||
-                                proximoLower.includes('00') ||
-                                proximoItem.length <= 6
+                                proximo === 'a' || proximo === '-' || proximo === 'hasta' ||
+                                proximo.match(/^\d{1,2}[:h.]?\d{0,2}/) ||
+                                proximoLower.includes('libre')
                             ) {
-                                valorFinalTurno = itemSiguiente + ' ' + proximoItem;
-                                offset++;
+                                acumuladoTurno += ' ' + proximo;
+                                saltosConsumidos = step;
+                            } else {
+                                break;
                             }
                         }
-
-                        diasEmpleado[diaAsignar] = valorFinalTurno;
-                        dIndex++;
                     }
-                    offset++;
+
+                    diasEmpleado[diasSemana[dIndex]] = acumuladoTurno.trim();
+                    offset += 1 + saltosConsumidos;
+                    dIndex++;
                 }
 
                 empleadosImportados.push({
@@ -436,9 +440,9 @@ async function importarPDFSemana(semId, event) {
             sem.empleados = empleadosImportados;
             guardarDatos();
             renderizar();
-            alert(`¡PDF importado con éxito! Se han clonado ${empleadosImportados.length} empleados con sus turnos.`);
+            alert(`¡PDF importado con éxito! Se han clonado ${empleadosImportados.length} empleados con sus turnos correctamente.`);
         } else {
-            alert("No se han podido extraer automáticamente los empleados y turnos de este formato de PDF.");
+            alert("No se han podido extraer automáticamente los turnos de este formato de PDF.");
         }
 
     } catch (error) {
