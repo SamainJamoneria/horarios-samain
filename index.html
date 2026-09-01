@@ -29,16 +29,6 @@
         button.btn-pdf { background-color: #e74c3c; }
         button.btn-add { background-color: #2980b9; }
         button:active { opacity: 0.8; }
-
-        /* Barra de turnos rápidos */
-        .quick-turns-container {
-            display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; 
-            background: #eef2f7; padding: 8px; border-radius: 5px; border: 1px solid #dce3ec;
-        }
-        .quick-turns-container span { width: 100%; font-size: 0.75rem; font-weight: bold; color: #2c3e50; margin-bottom: 2px; }
-        .btn-quick { background-color: #34495e; color: white; border: none; padding: 6px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: normal; cursor: pointer; flex: 1; min-width: 80px; text-align: center; }
-        .btn-quick:hover { background-color: #2c3e50; }
-
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         
         table { width: 100%; border-collapse: collapse; margin-bottom: 10px; min-width: 750px; table-layout: auto; }
@@ -68,7 +58,6 @@
             font-family: Arial, sans-serif;
             line-height: 1.2;
         }
-        td textarea:focus { border-color: #27ae60; outline: none; background-color: #f0fdf4; box-shadow: 0 0 4px rgba(39, 174, 96, 0.4); }
         
         .btn-eye { background: transparent; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px; min-width: auto; flex: 0; }
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; min-width: auto; flex: 0; }
@@ -82,11 +71,10 @@
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
             #pantalla-login { display: none !important; }
-            .controls, .quick-turns-container, button, .no-print, .btn-eye-horas { display: none !important; }
+            .controls, button, .no-print, .btn-eye-horas { display: none !important; }
             
             tr.fila-oculta-pdf { display: none !important; }
             
-            /* Si el check maestro NO está activo, oculta las horas junto al nombre al imprimir */
             body:not(.exportar-total-activo) .horas-container:not(.horas-exportables-activo) { display: none !important; }
 
             table { font-size: 0.85rem; width: 100%; min-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -119,7 +107,7 @@
         <button class="btn-pdf" onclick="prepararPDF()">Guardar / PDF</button>
     </div>
 
-     <div class="export-toggle-container no-print">
+    <div class="export-toggle-container no-print">
         <label>
             <input type="checkbox" id="chk-exportar-total" onchange="toggleExportarTotal(this)"> 
             Mostrar total de horas en el PDF
