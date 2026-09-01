@@ -3,7 +3,6 @@ const coloresSuaves = [
     "#e8f8f5", "#fef9e7", "#fae5d3", "#fadbd8", "#eaeded"
 ];
 
-// Estructura de semanas almacenadas
 let semanas = JSON.parse(localStorage.getItem("samain_semanas")) || [
     {
         id: "semana_principal",
@@ -17,9 +16,8 @@ let semanas = JSON.parse(localStorage.getItem("samain_semanas")) || [
     }
 ];
 
-// Asegurar compatibilidad de datos antiguos
 semanas = semanas.map(sem => {
-    if (!sem.id) sem.id = "sem_" + Math.random().toString(36.substring(2, 9));
+    if (!sem.id) sem.id = "sem_" + Math.random().toString(36).substring(2, 9);
     if (!sem.titulo) sem.titulo = "Horario Semanal - Samaín";
     if (sem.exportarTotal === undefined) sem.exportarTotal = false;
     sem.empleados = sem.empleados.map(emp => {
@@ -75,7 +73,6 @@ function renderizarApp() {
         bloqueSemana.className = "semana-bloque";
         bloqueSemana.setAttribute("data-semana-id", sem.id);
 
-        // Cabecera de la semana (Título + Acciones)
         let headerDiv = document.createElement("div");
         headerDiv.className = "semana-header";
 
@@ -86,7 +83,7 @@ function renderizarApp() {
         inputTitulo.type = "text";
         inputTitulo.className = "semana-titulo-input";
         inputTitulo.value = sem.titulo;
-        inputTitulo.disabled = true; // Bloqueado hasta hacer clic en el lápiz
+        inputTitulo.disabled = true;
         inputTitulo.oninput = function() {
             sem.titulo = this.value;
             guardarDatos();
@@ -112,7 +109,6 @@ function renderizarApp() {
         titleCont.appendChild(btnEditTitle);
         headerDiv.appendChild(titleCont);
 
-        // Botones de acción de la semana
         let accionesHeader = document.createElement("div");
         accionesHeader.className = "semana-acciones-header";
 
@@ -129,7 +125,6 @@ function renderizarApp() {
         accionesHeader.appendChild(btnAddEmp);
         accionesHeader.appendChild(btnPdfWeek);
 
-        // Permitir eliminar semana solo si hay más de una creada
         if (semanas.length > 1) {
             let btnDelWeek = document.createElement("button");
             btnDelWeek.className = "btn-del-week";
@@ -141,7 +136,6 @@ function renderizarApp() {
         headerDiv.appendChild(accionesHeader);
         bloqueSemana.appendChild(headerDiv);
 
-        // Tabla de la semana
         let tableResponsive = document.createElement("div");
         tableResponsive.className = "table-responsive";
 
@@ -219,7 +213,6 @@ function renderizarApp() {
             tdNombre.appendChild(divCell);
             tr.appendChild(tdNombre);
 
-            // Días de la semana (1 al 7)
             for (let dia = 1; dia <= 7; dia++) {
                 let tdDia = document.createElement("td");
                 let key = `${sem.id}_emp-${eIndex}-dia-${dia}`;
@@ -268,7 +261,6 @@ function renderizarApp() {
         tableResponsive.appendChild(table);
         bloqueSemana.appendChild(tableResponsive);
 
-        // Checkbox opcional de mostrar horas junto al nombre para esta semana concreta
         let toggleContainer = document.createElement("div");
         toggleContainer.className = "export-toggle-container no-print";
         let chkId = `chk_total_${sem.id}`;
@@ -300,11 +292,9 @@ function actualizarTotalFilaLocal(trFila, sIndex, eIndex) {
 }
 
 function agregarSemana() {
-    // Duplicar la estructura de la última semana existente o crear una por defecto
     let ultimaSemana = semanas[semanas.length - 1];
     let nuevaId = "sem_" + Math.random().toString(36).substring(2, 9);
     
-    // Copiar empleados pero limpiar los valores de los días de los inputs en localStorage si se desea o clonarlos
     let nuevosEmpleados = ultimaSemana.empleados.map(emp => ({
         nombre: emp.nombre,
         exportar: emp.exportar,
@@ -325,7 +315,6 @@ function agregarSemana() {
 function eliminarSemana(sIndex) {
     if (confirm(`¿Seguro que quieres eliminar la semana "${semanas[sIndex].titulo}" y todos sus turnos?`)) {
         let semId = semanas[sIndex].id;
-        // Limpiar localStorage de los turnos de esta semana
         Object.keys(localStorage).forEach(key => {
             if (key.startsWith(semId)) {
                 localStorage.removeItem(key);
@@ -357,11 +346,9 @@ function eliminarEmpleado(sIndex, eIndex) {
 }
 
 function prepararPDFSemana(bloqueSemanaElemento, tituloSemana) {
-    // Marcar esta semana específica para impresión
     document.querySelectorAll(".semana-bloque").forEach(b => b.classList.remove("imprimiendo-activo"));
     bloqueSemanaElemento.classList.add("imprimiendo-activo");
 
-    // Comprobar si el checkbox de total activo de esta semana está marcado
     let chk = bloqueSemanaElemento.querySelector("input[type='checkbox']");
     if (chk && chk.checked) {
         document.body.classList.add("exportar-total-activo");
