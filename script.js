@@ -267,7 +267,7 @@ function renderizarApp() {
         toggleContainer.innerHTML = `
             <label>
                 <input type="checkbox" id="${chkId}" ${sem.exportarTotal ? "checked" : ""}> 
-                Mostrar total de horas junto al nombre en el PDF de esta semana
+                Mostrar total de horas en el PDF de esta semana
             </label>
         `;
         toggleContainer.querySelector("input").onchange = function() {
