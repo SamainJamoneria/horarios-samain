@@ -92,7 +92,16 @@
 </head>
 <body>
 
-    <div class="container">
+    <!-- Pantalla de Login con contraseña -->
+    <div id="pantalla-login">
+        <div class="login-card">
+            <h3>Acceso Restringido</h3>
+            <input type="password" id="input-password" placeholder="Contraseña" onkeydown="if(event.key === 'Enter') verificarPassword()">
+            <button onclick="verificarPassword()">Entrar</button>
+        </div>
+    </div>
+
+    <div class="container" id="app-container" style="display: none;">
         <!-- Controles globales con el botón de Nueva Semana y Borrar Todo en verde oscuro -->
         <div class="global-controls no-print">
             <button class="btn-add-week" onclick="agregarSemana()">+ Nueva Semana</button>
@@ -103,6 +112,26 @@
         <div id="semanas-contenedor"></div>
     </div>
 
+    <script>
+        function verificarPassword() {
+            const pass = document.getElementById('input-password').value;
+            if (pass === '1494') {
+                document.getElementById('pantalla-login').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                sessionStorage.setItem('sesion_autorizada', 'true');
+            } else {
+                alert('Contraseña incorrecta');
+                document.getElementById('input-password').value = '';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('sesion_autorizada') === 'true') {
+                document.getElementById('pantalla-login').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+            }
+        });
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
