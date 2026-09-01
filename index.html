@@ -30,18 +30,25 @@
         button.btn-add { background-color: #2980b9; }
         button:active { opacity: 0.8; }
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; min-width: 700px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; min-width: 750px; table-layout: auto; }
         th, td { border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 0.75rem; vertical-align: middle; }
         th { background-color: #2c3e50; color: white; padding: 6px 4px; }
         
+        /* Forzar que la columna Empleado y los días tengan proporciones equilibradas y más espacio */
+        th:first-child, td:first-child { width: 16%; min-width: 130px; }
+        th:not(:first-child):not(.no-print), td:not(:first-child):not(.no-print) { width: 10%; }
+
         .empleado-cell { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px; }
-        .empleado-input { font-weight: bold; border: 1px solid #ccc; border-radius: 3px; padding: 4px 2px; text-align: left; flex: 1; font-size: 0.75rem; }
         
-        .horas-container { display: flex; align-items: center; gap: 2px; background: #fff; padding: 2px 4px; border-radius: 3px; border: 1px solid #ddd; }
+        /* Permitir que el input del nombre se expanda dinámicamente según el contenido */
+        .empleado-input { font-weight: bold; border: 1px solid #ccc; border-radius: 3px; padding: 4px 6px; text-align: left; flex: 1; font-size: 0.75rem; width: 100%; box-sizing: border-box; }
+        
+        .horas-container { display: flex; align-items: center; gap: 2px; background: #fff; padding: 2px 4px; border-radius: 3px; border: 1px solid #ddd; flex-shrink: 0; }
         .total-horas { font-size: 0.7rem; color: #555; white-space: nowrap; font-weight: bold; }
         .btn-eye-horas { background: transparent; border: none; cursor: pointer; font-size: 0.75rem; padding: 0; min-width: auto; line-height: 1; }
         
-        /* Textarea para permitir saltos de línea (horarios partidos) */
+        /* Textarea para horarios partidos */
         td textarea { 
             width: 95%; 
             height: 38px; 
@@ -78,6 +85,7 @@
 
             table { font-size: 0.85rem; width: 100%; min-width: 100%; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             th, td { padding: 8px 4px; }
+            th:first-child, td:first-child { width: 18%; }
             th { background-color: #2c3e50 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             tr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             td input.empleado-input { border: none; background: transparent !important; font-weight: bold; font-size: 0.85rem; }
