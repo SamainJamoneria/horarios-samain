@@ -365,46 +365,39 @@ async function importarPDFSemana(semId, event) {
 
         const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         
-        // Lista negra estricta de palabras que NUNCA pueden ser el nombre de un empleado
         const palabrasIgnorar = [
             'empleado', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 
             'acciones', 'total', 'nuevo', 'horario', 'semanal', 'baja', 'libre', 'vacaciones', 'festivo'
         ];
 
-        itemsTexto.sort((a, b) => {
-            if (Math.abs(a.y - b.y) > 5) {
-                return b.y - a.y; 
-            }
-            return a.x - b.x; 
-        });
-
-        let lineasAgrupadas = [];
-        let lineaActual = [];
-        let ultimaY = null;
-
+        // Agrupar elementos por líneas horizontales (misma coordenada y aproximada, ej. tolerancia de 8px)
+        let lineasMap = new Map();
         itemsTexto.forEach(item => {
-            if (ultimaY === null || Math.abs(item.y - ultimaY) > 5) {
-                if (lineaActual.length > 0) {
-                    lineasAgrupadas.push(lineaActual);
-                }
-                lineaActual = [item];
-                ultimaY = item.y;
-            } else {
-                lineaActual.push(item);
+            let encontradaY = Array.from(lineasMap.keys()).find(y => Math.abs(y - item.y) < 8);
+            let targetY = encontradaY !== undefined ? encontradaY : item.y;
+            
+            if (!lineasMap.has(targetY)) {
+                lineasMap.set(targetY, []);
             }
+            lineasMap.get(targetY).push(item);
         });
-        if (lineaActual.length > 0) {
-            lineasAgrupadas.push(lineaActual);
-        }
+
+        // Ordenar las líneas de arriba a abajo
+        let lineasOrdenadasY = Array.from(lineasMap.keys()).sort((a, b) => b - a);
 
         let empleadosImportados = [];
 
-        lineasAgrupadas.forEach(lineaItems => {
+        lineasOrdenadasY.forEach(y => {
+            let lineaItems = lineasMap.get(y);
+            // Ordenar los elementos de la línea de izquierda a derecha (x ascendente)
+            lineaItems.sort((a, b) => a.x - b.x);
+
             let textosLinea = lineaItems.map(it => it.str);
+            if (textosLinea.length === 0) return;
+
             let primerTexto = textosLinea[0];
             let primerLower = primerTexto.toLowerCase();
 
-            // Validación estricta para el nombre del empleado
             let esNombreInvalido = (
                 palabrasIgnorar.some(palabra => primerLower.includes(palabra)) ||
                 primerTexto.includes(':') ||
@@ -416,37 +409,33 @@ async function importarPDFSemana(semId, event) {
             if (!esNombreInvalido) {
                 let nombreEmpleado = primerTexto;
                 let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
-                let tokensTurnos = textosLinea.slice(1);
                 
+                // Los elementos a partir del nombre corresponden a los turnos de los días de la semana
+                let tokensTurnos = textosLinea.slice(1);
                 let diaIndex = 0;
-                let turnoAcumulado = '';
+                let turnoActual = '';
 
-                tokensTurnos.forEach((token) => {
+                tokensTurnos.forEach(token => {
                     let tokenLower = token.toLowerCase();
-                    let esHora = token.includes(':') || /\d/.test(token) || tokenLower.includes('libre') || tokenLower.includes('baja');
+                    let esSeparador = token === 'a' || token === '-' || token === 'hasta';
 
-                    if (esHora) {
-                        if (turnoAcumulado !== '') {
-                            if (diaIndex < diasSemana.length) {
-                                diasEmpleado[diasSemana[diaIndex]] = turnoAcumulado.trim();
-                                diaIndex++;
-                            }
-                            turnoAcumulado = '';
-                        }
-                        turnoAcumulado = token;
-                    } else if (token === 'a' || token === '-' || token === 'hasta') {
-                        turnoAcumulado += ' ' + token;
+                    if (esSeparador) {
+                        turnoActual += ' ' + token;
+                    } else if (turnoActual !== '' && !token.includes(':') && !/\d/.test(token) && !tokenLower.includes('libre') && !tokenLower.includes('baja')) {
+                        // Si ya tenemos un turno empezado y el token actual es texto descriptivo secundario
+                        turnoActual += ' ' + token;
                     } else {
-                        if (turnoAcumulado !== '') {
-                            turnoAcumulado += ' ' + token;
-                        } else {
-                            turnoAcumulado = token;
+                        // Si teníamos un turno acumulado, lo asignamos al día correspondiente antes de pasar al siguiente
+                        if (turnoActual !== '' && diaIndex < diasSemana.length) {
+                            diasEmpleado[diasSemana[diaIndex]] = turnoActual.trim();
+                            diaIndex++;
                         }
+                        turnoActual = token;
                     }
                 });
 
-                if (turnoAcumulado !== '' && diaIndex < diasSemana.length) {
-                    diasEmpleado[diasSemana[diaIndex]] = turnoAcumulado.trim();
+                if (turnoActual !== '' && diaIndex < diasSemana.length) {
+                    diasEmpleado[diasSemana[diaIndex]] = turnoActual.trim();
                 }
 
                 empleadosImportados.push({
