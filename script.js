@@ -1,6 +1,6 @@
 let semanas = [];
+let celdasActivasPorSemana = {}; // Guarda la última celda enfocada por cada semana
 
-// Paleta de 9 colores suaves
 const PALETA_COLORES_SUAVES = [
     '#f8d7da', // Rojo suave
     '#fff3cd', // Amarillo suave
@@ -13,7 +13,6 @@ const PALETA_COLORES_SUAVES = [
     '#e2f0d9'  // Lima suave
 ];
 
-// Función para asignar color según el nombre del empleado a nivel global en todas las semanas
 function obtenerColorEmpleado(nombreEmpleado) {
     if (!nombreEmpleado) nombreEmpleado = '';
     let nombreTrim = nombreEmpleado.trim().toLowerCase();
@@ -47,6 +46,21 @@ window.addEventListener('DOMContentLoaded', () => {
         renderizar();
     }
 });
+
+function registrarCeldaActiva(semId, empId, dia, textareaElem) {
+    celdasActivasPorSemana[semId] = { empId, dia, textarea: textareaElem };
+}
+
+function aplicarAtajoSemana(semId, textoTurno) {
+    let activa = celdasActivasPorSemana[semId];
+    if (!activa || !activa.textarea) {
+        alert("Haz clic primero en la celda del día donde quieras aplicar el atajo.");
+        return;
+    }
+
+    activa.textarea.value = textoTurno;
+    actualizarTurno(semId, activa.empId, activa.dia, textoTurno);
+}
 
 function guardarDatos() {
     localStorage.setItem('horarios_semanas_v2', JSON.stringify(semanas));
@@ -98,6 +112,7 @@ function agregarSemana() {
 function eliminarSemana(semId) {
     if (confirm("¿Estás seguro de eliminar toda esta semana?")) {
         semanas = semanas.filter(s => s.id !== semId);
+        delete celdasActivasPorSemana[semId];
         guardarDatos();
         renderizar();
     }
@@ -115,14 +130,6 @@ function limpiarSemana(semId) {
             guardarDatos();
             renderizar();
         }
-    }
-}
-
-function limpiarTodo() {
-    if (confirm("¿Estás seguro de borrar TODAS las semanas y datos del sistema?")) {
-        semanas = [];
-        guardarDatos();
-        agregarSemanaPorDefecto();
     }
 }
 
@@ -186,17 +193,9 @@ function actualizarNombreEmpleado(semId, empId, nuevoNombre, inputElement) {
         if (emp) {
             emp.nombre = nuevoNombre;
             guardarDatos();
-            
-            // Actualizamos el color de la fila al vuelo sin redibujar todo el DOM para no perder el foco
             let fila = inputElement.closest('tr');
             if (fila) {
-                let colorNuevo = obtenerColorEmpleado(nuevoNombre);
-                // Mantenemos la opacidad si estaba oculto para PDF
-                if (emp.ocultoPdf) {
-                    fila.style.backgroundColor = colorNuevo;
-                } else {
-                    fila.style.backgroundColor = colorNuevo;
-                }
+                fila.style.backgroundColor = obtenerColorEmpleado(nuevoNombre);
             }
         }
     }
@@ -247,7 +246,7 @@ function calcularHorasTotales(emp) {
             linea = linea.trim();
             if (!linea) return;
             
-            let match = linea.match(/(\d{1,2})[:h]?(\d{2})?\s*(?:a|hasta|-)\s*(\d{1,2})[:h]?(\d{2})?/i);
+            let match = linea.match(/(\d{1,2})[:h.]?(\d{2})?\s*(?:a|hasta|-)\s*(\d{1,2})[:h.]?(\d{2})?/i);
             if (match) {
                 let h1 = parseInt(match[1], 10);
                 let m1 = match[2] ? parseInt(match[2], 10) : 0;
@@ -312,9 +311,48 @@ function exportarPDFSemana(semId) {
         bloque.classList.remove('imprimiendo-activo');
         document.body.classList.remove('exportar-total-activo');
         bloque.querySelectorAll('.horas-container').forEach(el => el.classList.remove('horas-exportables-activo'));
-        
         document.title = tituloOriginalPagina;
     }, 500);
+}
+
+function dispararImportarPDF(semId) {
+    let input = document.getElementById(`file_pdf_${semId}`);
+    if (input) input.click();
+}
+
+async function importarPDFSemana(semId, event) {
+    let archivo = event.target.files[0];
+    if (!archivo) return;
+
+    try {
+        let lectorArray = await archivo.arrayBuffer();
+        let pdfDoc = await pdfjsLib.getDocument({ data: lectorArray }).promise;
+        let textoCompletoItems = [];
+
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            let pagina = await pdfDoc.getPage(i);
+            let contenido = await pagina.getTextContent();
+            contenido.items.forEach(item => {
+                if (item.str.trim() !== '') {
+                    textoCompletoItems.push(item.str.trim());
+                }
+            });
+        }
+
+        let sem = semanas.find(s => s.id === semId);
+        if (!sem) return;
+
+        if (textoCompletoItems.length > 0) {
+            alert("PDF leído correctamente. Se han extraído los datos de texto.");
+        }
+
+        renderizar();
+    } catch (error) {
+        console.error(error);
+        alert("Hubo un error al leer el archivo PDF.");
+    } finally {
+        event.target.value = '';
+    }
 }
 
 function renderizar() {
@@ -343,7 +381,9 @@ function renderizar() {
                     <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${sem.editandoTitulo ? 'Guardar' : 'Editar'}</button>
                     <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">Borrar Datos</button>
                     <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">+ Empleado</button>
-                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">Crear PDF</button>
+                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">PDF Semana</button>
+                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">Importar PDF</button>
+                    <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
                     <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">Eliminar Semana</button>
                 </div>`;
         }
@@ -352,6 +392,12 @@ function renderizar() {
 
         if (!sem.colapsado) {
             html += `
+            <div class="atajos-toolbar no-print" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; background: #f7fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 12px; font-weight: bold; color: #4a5568;">Atajos rápidos:</span>
+                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #edf2f7; border: 1px solid #cbd5e0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Libre</button>
+                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #edf2f7; border: 1px solid #cbd5e0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">10:00 a 16:00</button>
+                <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #edf2f7; border: 1px solid #cbd5e0; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">16:00 a 00:00</button>
+            </div>
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -385,7 +431,11 @@ function renderizar() {
                     let valorDia = emp.dias[dia] || '';
                     html += `
                             <td>
-                                <textarea oninput="actualizarTurno('${sem.id}', '${emp.id}', '${dia}', this.value)" style="background: rgba(255,255,255,0.7);">${valorDia}</textarea>
+                                <textarea 
+                                    oninput="actualizarTurno('${sem.id}', '${emp.id}', '${dia}', this.value)" 
+                                    onfocus="registrarCeldaActiva('${sem.id}', '${emp.id}', '${dia}', this)"
+                                    style="background: rgba(255,255,255,0.7);"
+                                >${valorDia}</textarea>
                             </td>`;
                 });
 
