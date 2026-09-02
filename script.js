@@ -322,7 +322,7 @@ function exportarPDFSemana(semId) {
 
     bloque.classList.add('imprimiendo-activo');
     if (sem.mostrarTotalPdf) {
-        document.body.classList.add('exportار-total-activo');
+        document.body.classList.add('exportar-total-activo');
         bloque.querySelectorAll('.horas-container').forEach(el => el.classList.add('horas-exportables-activo'));
     }
 
@@ -368,7 +368,6 @@ async function importarPDFSemana(semId, event) {
         let sem = semanas.find(s => s.id === semId);
         if (!sem) return;
 
-        // 1. Detectar dinámicamente las coordenadas X de las columnas de los días basándonos en la cabecera
         const nombresDiasOrdenados = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
         let coordenadasDias = {};
 
@@ -382,40 +381,32 @@ async function importarPDFSemana(semId, event) {
             });
         });
 
-        // Si por alguna razón no encuentra las coordenadas exactas, establecemos unas por defecto basadas en el PDF analizado
         let xArr = nombresDiasOrdenados.map(d => coordenadasDias[d]).filter(x => x !== undefined);
         let umbralesX = [];
         
         if (xArr.length === 7) {
-            // Ordenar las X de menor a mayor
             xArr.sort((a, b) => a - b);
-            // Crear los puntos medios (umbrales) entre columna y columna
             for (let i = 0; i < xArr.length - 1; i++) {
                 umbralesX.push((xArr[i] + xArr[i+1]) / 2);
             }
         } else {
-            // Umbrales de respaldo calibrados para este formato exacto de PDF
             umbralesX = [75, 135, 195, 255, 315, 375];
         }
 
-        // Función para asignar una coordenada X al día correspondiente
         function obtenerDiaPorX(x) {
             for (let i = 0; i < umbralesX.length; i++) {
                 if (x < umbralesX[i]) return nombresDiasOrdenados[i];
             }
-            return nombresDiasOrdenados[6]; // Domingo
+            return nombresDiasOrdenados[6];
         }
 
-        // Filtrar textos innecesarios de cabeceras/pies
         let itemsValidos = itemsTexto.filter(item => {
             let t = item.str.toLowerCase();
             if (t.includes('horario semanal') || t.includes('samain') || t.includes('página') || t.includes('github.io') || t.includes('empleado')) return false;
-            // Descartar también los nombres de los días sueltos de la cabecera superior
             if (nombresDiasOrdenados.some(d => d.toLowerCase() === t)) return false;
             return true;
         });
 
-        // Ordenar elementos de arriba a abajo (Y descendente)
         itemsValidos.sort((a, b) => b.y - a.y);
 
         let filasAgrupadas = [];
@@ -494,7 +485,6 @@ async function importarPDFSemana(semId, event) {
 
 function procesarItemsEnDias(empObj, itemsFila, obtenerDiaPorX) {
     itemsFila.forEach(item => {
-        // Ignorar si el texto está en la zona izquierda del nombre del empleado (< 40px)
         if (item.x < 40) return;
 
         let diaAsignado = obtenerDiaPorX(item.x);
@@ -502,7 +492,6 @@ function procesarItemsEnDias(empObj, itemsFila, obtenerDiaPorX) {
 
         if (empObj.dias[diaAsignado]) {
             let actual = empObj.dias[diaAsignado];
-            // Si el texto anterior termina con conector, lo unimos con espacio; si no, salto de línea
             if (actual.endsWith('a') || actual.endsWith('-') || actual.endsWith('hasta')) {
                 empObj.dias[diaAsignado] = actual + ' ' + textoLimpio;
             } else {
@@ -537,13 +526,13 @@ function renderizar() {
         if (!sem.colapsado) {
             html += `
                 <div class="semana-acciones-header">
-                    <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${sem.editandoTitulo ? 'Guardar' : 'Editar'}</button>
-                    <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">Borrar Datos</button>
-                    <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">+ Empleado</button>
-                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">PDF Semana</button>
-                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Importar PDF</button>
+                    <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${sem.editandoTitulo ? '💾 Guardar' : '✏️ Editar'}</button>
+                    <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">🗑️ Borrar Datos</button>
+                    <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">➕ Empleado</button>
+                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">📄 PDF Semana</button>
+                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">📥 Importar PDF</button>
                     <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
-                    <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">Eliminar Semana</button>
+                    <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">🗑️ Eliminar Semana</button>
                 </div>`;
         }
 
