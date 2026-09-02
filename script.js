@@ -14,21 +14,20 @@ const PALETA_COLORES_SUAVES = [
     '#e2f0d9'  
 ];
 
-// Paleta específica para Modo Gold (Combinando tonos dorados suaves, blancos y azules elegantes)
+// Paleta Modo Gold (Filas con combinación de tonos dorados suaves, azules y blancos limpios)
 const PALETA_COLORES_GOLD = [
-    '#fdf4dc', // Dorado suave cálido
-    '#edf4f9', // Azul muy suave y elegante
+    '#fdf9ed', // Dorado suave cálido
+    '#f0f5fa', // Azul muy suave elegante
     '#ffffff', // Blanco puro
-    '#f9f3e6', // Tono arena suave
-    '#e7f1f5', // Azul hielo claro
-    '#fffaf0'  // Blanco marfil
+    '#f7f1e3', // Tono arena sutil
+    '#e8f1f6', // Azul claro delicado
+    '#fffdfa'  // Blanco marfil
 ];
 
 function obtenerColorEmpleado(nombreEmpleado) {
     if (!nombreEmpleado) nombreEmpleado = '';
     let nombreTrim = nombreEmpleado.trim().toLowerCase();
 
-    // Detectar si estamos en Modo Gold para usar su paleta específica
     let esGold = document.body.classList.contains('modo-gold');
     let paletaActiva = esGold ? PALETA_COLORES_GOLD : PALETA_COLORES_SUAVES;
 
