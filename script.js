@@ -2,9 +2,9 @@ let semanas = [];
 let celdasActivasPorSemana = {}; 
 
 const PALETA_COLORES_SUAVES = [
-    '#fff3cd', // Dorado suave
-    '#e8f4f8', // Azul suave
-    '#ffffff', // Blanco
+    '#fff3cd', 
+    '#e8f4f8', 
+    '#ffffff', 
     '#f8d7da', 
     '#d4edda', 
     '#f5e6d3', 
@@ -14,14 +14,13 @@ const PALETA_COLORES_SUAVES = [
     '#e2f0d9'  
 ];
 
-// Paleta Modo Gold (Filas con combinación de tonos dorados suaves, azules y blancos limpios)
 const PALETA_COLORES_GOLD = [
-    '#fdf9ed', // Dorado suave cálido
-    '#f0f5fa', // Azul muy suave elegante
-    '#ffffff', // Blanco puro
-    '#f7f1e3', // Tono arena sutil
-    '#e8f1f6', // Azul claro delicado
-    '#fffdfa'  // Blanco marfil
+    '#fdf9ed', 
+    '#f0f5fa', 
+    '#ffffff', 
+    '#f7f1e3', 
+    '#e8f1f6', 
+    '#fffdfa'  
 ];
 
 function obtenerColorEmpleado(nombreEmpleado) {
@@ -528,6 +527,8 @@ function renderizar() {
     const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
     semanas.forEach(sem => {
+        let textoBtnEditar = sem.editandoTitulo ? '<img src="guardar.png" class="icon-btn" alt=""> Guardar' : '<img src="editar.png" class="icon-btn" alt=""> Editar';
+
         html += `
         <div class="semana-bloque" id="bloque_${sem.id}">
             <div class="semana-header" style="margin-bottom: ${sem.colapsado ? '0' : '8px'};">
@@ -543,13 +544,13 @@ function renderizar() {
         if (!sem.colapsado) {
             html += `
                 <div class="semana-acciones-header">
-                    <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${sem.editandoTitulo ? '💾 Guardar' : '✏️ Editar'}</button>
-                    <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')">🗑️ Borrar Datos</button>
-                    <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')">➕ Empleado</button>
-                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')">📄 PDF Semana</button>
-                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">📥 Importar PDF</button>
+                    <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${textoBtnEditar}</button>
+                    <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Borrar Datos</button>
+                    <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')"><img src="mas.png" class="icon-btn" alt=""> Empleado</button>
+                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')"><img src="pdf.png" class="icon-btn" alt=""> PDF Semana</button>
+                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"><img src="importpdf.png" class="icon-btn" alt=""> Importar PDF</button>
                     <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
-                    <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')">🗑️ Eliminar Semana</button>
+                    <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Eliminar Semana</button>
                 </div>`;
         }
 
@@ -561,7 +562,7 @@ function renderizar() {
             html += `
             <div class="atajos-toolbar no-print" style="margin-bottom: 8px; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 <div style="display: flex; justify-content: space-between; align-items: center; ${atajosOcultos ? '' : 'margin-bottom: 6px;'}">
-                    <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;">⚡ Atajos rápidos:</span>
+                    <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos:</span>
                     <button type="button" onclick="toggleAtajos('${sem.id}')" style="background: transparent; border: none; color: #3b82f6; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0; min-width: auto; flex: unset;">
                         ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
                     </button>
