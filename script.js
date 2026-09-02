@@ -2,13 +2,14 @@ let semanas = [];
 let celdasActivasPorSemana = {}; 
 
 const PALETA_COLORES_SUAVES = [
+    '#fff3cd', // Dorado suave
+    '#e8f4f8', // Azul suave
+    '#ffffff', // Blanco
     '#f8d7da', 
-    '#fff3cd', 
     '#d4edda', 
     '#f5e6d3', 
     '#e2e2e2', 
     '#fce8e6', 
-    '#e8f4f8', 
     '#fbe5f2', 
     '#e2f0d9'  
 ];
@@ -370,7 +371,6 @@ async function importarPDFSemana(semId, event) {
             'acciones', 'total', 'nuevo', 'horario', 'semanal', 'baja', 'libre', 'vacaciones', 'festivo'
         ];
 
-        // Agrupar elementos por líneas horizontales (misma coordenada y aproximada, ej. tolerancia de 8px)
         let lineasMap = new Map();
         itemsTexto.forEach(item => {
             let encontradaY = Array.from(lineasMap.keys()).find(y => Math.abs(y - item.y) < 8);
@@ -382,14 +382,12 @@ async function importarPDFSemana(semId, event) {
             lineasMap.get(targetY).push(item);
         });
 
-        // Ordenar las líneas de arriba a abajo
         let lineasOrdenadasY = Array.from(lineasMap.keys()).sort((a, b) => b - a);
 
         let empleadosImportados = [];
 
         lineasOrdenadasY.forEach(y => {
             let lineaItems = lineasMap.get(y);
-            // Ordenar los elementos de la línea de izquierda a derecha (x ascendente)
             lineaItems.sort((a, b) => a.x - b.x);
 
             let textosLinea = lineaItems.map(it => it.str);
@@ -410,7 +408,6 @@ async function importarPDFSemana(semId, event) {
                 let nombreEmpleado = primerTexto;
                 let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
                 
-                // Los elementos a partir del nombre corresponden a los turnos de los días de la semana
                 let tokensTurnos = textosLinea.slice(1);
                 let diaIndex = 0;
                 let turnoActual = '';
@@ -422,10 +419,8 @@ async function importarPDFSemana(semId, event) {
                     if (esSeparador) {
                         turnoActual += ' ' + token;
                     } else if (turnoActual !== '' && !token.includes(':') && !/\d/.test(token) && !tokenLower.includes('libre') && !tokenLower.includes('baja')) {
-                        // Si ya tenemos un turno empezado y el token actual es texto descriptivo secundario
                         turnoActual += ' ' + token;
                     } else {
-                        // Si teníamos un turno acumulado, lo asignamos al día correspondiente antes de pasar al siguiente
                         if (turnoActual !== '' && diaIndex < diasSemana.length) {
                             diasEmpleado[diasSemana[diaIndex]] = turnoActual.trim();
                             diaIndex++;
