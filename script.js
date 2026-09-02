@@ -547,7 +547,7 @@ function renderizar() {
                     <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${textoBtnEditar}</button>
                     <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Borrar Datos</button>
                     <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')"><img src="mas.png" class="icon-btn" alt=""> Empleado</button>
-                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')"><img src="pdf.png" class="icon-btn" alt=""> PDF Semana</button>
+                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')"><img src="pdf.png" class="icon-btn" alt=""> Crear PDF</button>
                     <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"><img src="importpdf.png" class="icon-btn" alt=""> Importar PDF</button>
                     <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
                     <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Eliminar Semana</button>
