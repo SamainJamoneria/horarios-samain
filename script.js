@@ -14,9 +14,23 @@ const PALETA_COLORES_SUAVES = [
     '#e2f0d9'  
 ];
 
+// Paleta específica para Modo Gold (Combinando tonos dorados suaves, blancos y azules elegantes)
+const PALETA_COLORES_GOLD = [
+    '#fdf4dc', // Dorado suave cálido
+    '#edf4f9', // Azul muy suave y elegante
+    '#ffffff', // Blanco puro
+    '#f9f3e6', // Tono arena suave
+    '#e7f1f5', // Azul hielo claro
+    '#fffaf0'  // Blanco marfil
+];
+
 function obtenerColorEmpleado(nombreEmpleado) {
     if (!nombreEmpleado) nombreEmpleado = '';
     let nombreTrim = nombreEmpleado.trim().toLowerCase();
+
+    // Detectar si estamos en Modo Gold para usar su paleta específica
+    let esGold = document.body.classList.contains('modo-gold');
+    let paletaActiva = esGold ? PALETA_COLORES_GOLD : PALETA_COLORES_SUAVES;
 
     let mapaColores = new Map();
     let colorIndex = 0;
@@ -25,7 +39,7 @@ function obtenerColorEmpleado(nombreEmpleado) {
         sem.empleados.forEach(emp => {
             let n = emp.nombre ? emp.nombre.trim().toLowerCase() : '';
             if (n && !mapaColores.has(n)) {
-                mapaColores.set(n, PALETA_COLORES_SUAVES[colorIndex % PALETA_COLORES_SUAVES.length]);
+                mapaColores.set(n, paletaActiva[colorIndex % paletaActiva.length]);
                 colorIndex++;
             }
         });
@@ -35,7 +49,7 @@ function obtenerColorEmpleado(nombreEmpleado) {
         return mapaColores.get(nombreTrim);
     }
 
-    let colorAsignado = PALETA_COLORES_SUAVES[mapaColores.size % PALETA_COLORES_SUAVES.length];
+    let colorAsignado = paletaActiva[mapaColores.size % paletaActiva.length];
     return colorAsignado;
 }
 
@@ -87,9 +101,13 @@ function agregarSemanaPorDefecto() {
         mostrarTotalPdf: false,
         atajosOcultos: false,
         empleados: [
-            { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
-            { id: 'emp_2', nombre: 'Empleado 2', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false },
-            { id: 'emp_3', nombre: 'Empleado 3', dias: { Lunes: '9-17', Martes: '9-17', Miércoles: '9-17', Jueves: '9-17', Viernes: '9-17', Sábado: '9-17', Domingo: '9-17' }, ocultoPdf: false }
+            { id: 'emp_1', nombre: 'Pablo', dias: { Lunes: '16:00', Martes: '16:00', Miércoles: '16:00', Jueves: '16:00', Viernes: '16:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_2', nombre: 'Daisy', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_3', nombre: 'Gabri', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_4', nombre: 'Fer', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_5', nombre: 'Victoria', dias: { Lunes: '22:20', Martes: '22:30', Miércoles: '22:00', Jueves: '22:00', Viernes: '22:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_6', nombre: 'Luis', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_7', nombre: 'Vivi', dias: { Lunes: '16-20', Martes: '16-20', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
         ]
     });
     guardarDatos();
