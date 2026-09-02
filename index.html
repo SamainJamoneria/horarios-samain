@@ -28,7 +28,7 @@
             --bg-container: #ffffff;
             --btn-gold-bg: linear-gradient(135deg, #e4c586 0%, #b89753 100%);
             --btn-gold-text: #2c221e;
-            --th-bg: #132238; /* Azul marino oscuro exacto de la referencia */
+            --th-bg: #132238;
             --th-color: #ffffff;
             --input-border: #d4c4a8;
             --block-border: #dcd1b5;
@@ -53,13 +53,13 @@
         
         /* Selector de Temas */
         .theme-selector { display: flex; gap: 6px; margin-bottom: 10px; justify-content: flex-end; }
-        .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; min-width: auto; flex: unset; }
+        .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; min-width: auto; flex: unset; display: inline-flex; align-items: center; gap: 4px; }
         body.modo-rgb .btn-theme.rgb-active, body.modo-gold .btn-theme.gold-active { background: #334155; color: white; border-color: #1e293b; }
 
         .global-controls { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #eef2f7; padding: 10px; border-radius: 6px; border: 1px solid #dce3ec; }
         body.modo-gold .global-controls { background: #fbf7ee; border-color: #e5dac2; }
 
-        button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; min-width: 130px; }
+        button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; min-width: 130px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
         button.btn-add-week { background-color: var(--btn-add-week); }
         
         /* Estilo Gold para botones */
@@ -76,6 +76,8 @@
         }
 
         button:active { opacity: 0.8; }
+
+        .icon-btn { width: 14px; height: 14px; object-fit: contain; vertical-align: middle; }
 
         .semana-bloque { background: #fafbfc; border: 1px solid var(--block-border); border-radius: 6px; padding: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         body.modo-gold .semana-bloque { background: #ffffff; border-color: #dcd1b5; }
@@ -154,16 +156,16 @@
     </div>
 
     <div class="container" id="app-container" style="display: none;">
-        <!-- Selector de Tema (Modo RGB / Modo Gold) -->
+        <!-- Selector de Tema con iconos rgb.png y gold.png -->
         <div class="theme-selector no-print">
-            <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')">🎨 Modo RGB</button>
-            <button class="btn-theme gold-active" onclick="cambiarTema('gold')">⭐ Modo Gold</button>
+            <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> Modo RGB</button>
+            <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Modo Gold</button>
         </div>
 
-        <!-- Controles globales -->
+        <!-- Controles globales con semana.png y papelera.png -->
         <div class="global-controls no-print">
-            <button class="btn-add-week" onclick="agregarSemana()">📅 ➕ Nueva Semana</button>
-            <button onclick="borrarTodoGeneral()">🗑️ Borrar Todo</button>
+            <button class="btn-add-week" onclick="agregarSemana()"><img src="semana.png" class="icon-btn" alt=""> Nueva Semana</button>
+            <button onclick="borrarTodoGeneral()"><img src="papelera.png" class="icon-btn" alt=""> Borrar Todo</button>
         </div>
 
         <!-- CONTENEDOR PRINCIPAL DONDE SE RENDERIZAN LAS SEMANAS -->
@@ -205,7 +207,6 @@
             if (guardar) {
                 localStorage.setItem('horarios_tema_app', tipo);
             }
-            // Forzar renderizado inmediato para actualizar los colores de las filas
             if (typeof renderizar === 'function') {
                 renderizar();
             }
