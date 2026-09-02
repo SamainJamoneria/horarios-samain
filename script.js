@@ -322,7 +322,7 @@ function exportarPDFSemana(semId) {
 
     bloque.classList.add('imprimiendo-activo');
     if (sem.mostrarTotalPdf) {
-        document.body.classList.add('exportar-total-activo');
+        document.body.classList.add('exportار-total-activo');
         bloque.querySelectorAll('.horas-container').forEach(el => el.classList.add('horas-exportables-activo'));
     }
 
@@ -368,16 +368,54 @@ async function importarPDFSemana(semId, event) {
         let sem = semanas.find(s => s.id === semId);
         if (!sem) return;
 
-        // Filtrar encabezados de la cabecera y metadatos de pie de página
+        // 1. Detectar dinámicamente las coordenadas X de las columnas de los días basándonos en la cabecera
+        const nombresDiasOrdenados = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        let coordenadasDias = {};
+
+        itemsTexto.forEach(item => {
+            let txtClean = item.str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            nombresDiasOrdenados.forEach(dia => {
+                let diaClean = dia.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                if (txtClean === diaClean) {
+                    coordenadasDias[dia] = item.x;
+                }
+            });
+        });
+
+        // Si por alguna razón no encuentra las coordenadas exactas, establecemos unas por defecto basadas en el PDF analizado
+        let xArr = nombresDiasOrdenados.map(d => coordenadasDias[d]).filter(x => x !== undefined);
+        let umbralesX = [];
+        
+        if (xArr.length === 7) {
+            // Ordenar las X de menor a mayor
+            xArr.sort((a, b) => a - b);
+            // Crear los puntos medios (umbrales) entre columna y columna
+            for (let i = 0; i < xArr.length - 1; i++) {
+                umbralesX.push((xArr[i] + xArr[i+1]) / 2);
+            }
+        } else {
+            // Umbrales de respaldo calibrados para este formato exacto de PDF
+            umbralesX = [75, 135, 195, 255, 315, 375];
+        }
+
+        // Función para asignar una coordenada X al día correspondiente
+        function obtenerDiaPorX(x) {
+            for (let i = 0; i < umbralesX.length; i++) {
+                if (x < umbralesX[i]) return nombresDiasOrdenados[i];
+            }
+            return nombresDiasOrdenados[6]; // Domingo
+        }
+
+        // Filtrar textos innecesarios de cabeceras/pies
         let itemsValidos = itemsTexto.filter(item => {
             let t = item.str.toLowerCase();
-            if (t.includes('horario semanal') || t.includes('samain') || t.includes('página') || t.includes('github.io')) return false;
+            if (t.includes('horario semanal') || t.includes('samain') || t.includes('página') || t.includes('github.io') || t.includes('empleado')) return false;
+            // Descartar también los nombres de los días sueltos de la cabecera superior
+            if (nombresDiasOrdenados.some(d => d.toLowerCase() === t)) return false;
             return true;
         });
 
-        // Detectar columnas de coordenadas X basándonos en los nombres de los días si existen, o rangos estándar
-        // Agrupar elementos por bloques verticales (filas de empleados)
-        // Ordenar de arriba a abajo (Y descendente)
+        // Ordenar elementos de arriba a abajo (Y descendente)
         itemsValidos.sort((a, b) => b.y - a.y);
 
         let filasAgrupadas = [];
@@ -385,7 +423,7 @@ async function importarPDFSemana(semId, event) {
         let ultimaY = null;
 
         itemsValidos.forEach(item => {
-            if (ultimaY === null || Math.abs(item.y - ultimaY) > 12) {
+            if (ultimaY === null || Math.abs(item.y - ultimaY) > 10) {
                 if (filaActual.length > 0) {
                     filasAgrupadas.push(filaActual);
                 }
@@ -402,7 +440,6 @@ async function importarPDFSemana(semId, event) {
         const listaNombresEmpleadosFijos = ['pablo', 'daisy', 'gabri', 'fer', 'victoria', 'luis', 'vivi'];
         let empleadosMap = new Map();
 
-        // Inicializar empleados conocidos en orden
         listaNombresEmpleadosFijos.forEach(nombre => {
             let nombreCapitalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
             empleadosMap.set(nombreCapitalizado, {
@@ -417,27 +454,24 @@ async function importarPDFSemana(semId, event) {
 
         filasAgrupadas.forEach(fila => {
             fila.sort((a, b) => a.x - b.x);
-            let primerTexto = fila[0].str;
+            let primerItem = fila[0];
+            let primerTexto = primerItem.str;
             let primerLower = primerTexto.toLowerCase();
 
-            // Comprobar si esta línea empieza con el nombre de un empleado
             let nombreEncontrado = Array.from(empleadosMap.keys()).find(n => n.toLowerCase() === primerLower);
             
             if (nombreEncontrado) {
                 empleadoActualKey = nombreEncontrado;
-                // Si hay elementos adicionales en esta misma línea horizontal de la cabecera del empleado, pueden ser del lunes
                 let restoItems = fila.slice(1);
                 if (restoItems.length > 0 && empleadoActualKey) {
-                    procesarItemsEnDias(empleadosMap.get(empleadoActualKey), restoItems);
+                    procesarItemsEnDias(empleadosMap.get(empleadoActualKey), restoItems, obtenerDiaPorX);
                 }
             } else if (empleadoActualKey) {
-                // Es una línea de continuación de turnos para el empleado actual
-                procesarItemsEnDias(empleadosMap.get(empleadoActualKey), fila);
+                procesarItemsEnDias(empleadosMap.get(empleadoActualKey), fila, obtenerDiaPorX);
             }
         });
 
         let empleadosImportados = Array.from(empleadosMap.values()).filter(emp => {
-            // Comprobar si tiene algún día con contenido
             return Object.values(emp.dias).some(d => d.trim() !== '');
         });
 
@@ -447,7 +481,7 @@ async function importarPDFSemana(semId, event) {
             renderizar();
             alert(`¡Importación correcta! Se han cargado ${empleadosImportados.length} empleados.`);
         } else {
-            alert("No se han podido reconocer los turnos automáticamente. Comprueba que el PDF sea el estándar de la aplicación.");
+            alert("No se han podido reconocer los turnos automáticamente.");
         }
 
     } catch (error) {
@@ -458,29 +492,17 @@ async function importarPDFSemana(semId, event) {
     }
 }
 
-// Función auxiliar para clasificar los textos de los turnos según su posición X aproximada en columnas (Lunes a Domingo)
-function procesarItemsEnDias(empObj, itemsFila) {
-    const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-    
-    // Como el PDF distribuye las 7 columnas de izquierda a derecha por coordenadas X:
-    // Agrupamos los elementos de la fila según su posición X horizontal aproximada
+function procesarItemsEnDias(empObj, itemsFila, obtenerDiaPorX) {
     itemsFila.forEach(item => {
-        let x = item.x;
-        let diaAsignado = '';
-        
-        // Rangos de coordenadas X estimados para una página A4 horizontal o vertical estándar de horarios
-        if (x < 110) diaAsignado = 'Lunes';
-        else if (x < 170) diaAsignado = 'Martes';
-        else if (x < 230) diaAsignado = 'Miércoles';
-        else if (x < 290) diaAsignado = 'Jueves';
-        else if (x < 350) diaAsignado = 'Viernes';
-        else if (x < 410) diaAsignado = 'Sábado';
-        else diaAsignado = 'Domingo';
+        // Ignorar si el texto está en la zona izquierda del nombre del empleado (< 40px)
+        if (item.x < 40) return;
 
+        let diaAsignado = obtenerDiaPorX(item.x);
         let textoLimpio = item.str;
+
         if (empObj.dias[diaAsignado]) {
-            // Si ya hay texto, unimos inteligentemente (ej: "10:00 a" + "16:00" -> "10:00 a 16:00")
             let actual = empObj.dias[diaAsignado];
+            // Si el texto anterior termina con conector, lo unimos con espacio; si no, salto de línea
             if (actual.endsWith('a') || actual.endsWith('-') || actual.endsWith('hasta')) {
                 empObj.dias[diaAsignado] = actual + ' ' + textoLimpio;
             } else {
@@ -593,7 +615,7 @@ function renderizar() {
 
                 html += `
                             <td class="no-print" style="display: flex; gap: 4px; justify-content: center; align-items: center; border: none; height: 100%;">
-                                <button class="btn-eye" onclick="toggleOcultoPdf('${sem.id}', '${emp.id}')" title="Mostrar/Ocultar en PDF">${iconoOjo}</button>
+                                <button class="btn-eye" onclick="toggleOcultoPdf('${sem.id}', '${emp.id}')" title="Mostrar/Ocultar em PDF">${iconoOjo}</button>
                                 <button class="btn-delete" onclick="eliminarEmpleado('${sem.id}', '${emp.id}')">X</button>
                             </td>
                         </tr>`;
