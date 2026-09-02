@@ -125,6 +125,9 @@
         .export-toggle-container { margin-top: 5px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #e9ecef; }
         body.modo-gold .export-toggle-container { background: #fff; border-color: #e5dac2; }
         
+        /* Marca de agua / Logo inferior para impresión */
+        .logo-marca-agua { display: none; }
+
         @page { size: landscape; margin: 8mm; }
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -135,12 +138,24 @@
             .semana-bloque.imprimiendo-activo { display: block !important; }
             tr.fila-oculta-pdf { display: none !important; }
             body:not(.exportar-total-activo) .semana-bloque.imprimiendo-activo .horas-container:not(.horas-exportables-activo) { display: none !important; }
-            table { font-size: 0.85rem; width: 100%; min-width: 100%; }
+            table { font-size: 0.85rem; width: 100%; min-width: 100%; margin-bottom: 15px; }
             th, td { padding: 8px 4px; }
             th:first-child, td:first-child { width: 18%; }
             th { background-color: var(--th-bg) !important; color: var(--th-color) !important; }
             td input.empleado-input { border: none; background: transparent !important; font-weight: bold; font-size: 0.85rem; }
             td textarea { border: none; background: transparent !important; font-weight: bold; font-size: 0.85rem; resize: none; height: auto; overflow: visible; white-space: pre-wrap; }
+            
+            /* Estilo visible del logo en el PDF impreso */
+            .logo-marca-agua {
+                display: block !important;
+                text-align: center;
+                margin-top: 25px;
+            }
+            .logo-marca-agua img {
+                width: 140px;
+                opacity: 0.75;
+                object-fit: contain;
+            }
         }
     </style>
 </head>
