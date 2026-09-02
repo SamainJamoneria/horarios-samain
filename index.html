@@ -19,15 +19,19 @@
             --btn-borrar-todo: #145a32;
             --th-bg: #2c3e50;
             --th-color: white;
+            --input-border: #ccc;
+            --block-border: #ccd1d9;
         }
 
         body.modo-gold {
-            --bg-body: #fbf8f2;
+            --bg-body: #f7f4ee;
             --bg-container: #ffffff;
-            --btn-add-week: #c5a059;
-            --btn-borrar-todo: #b89753;
-            --th-bg: #1a2b3c;
-            --th-color: #fcf8f2;
+            --btn-gold-bg: linear-gradient(135deg, #e4c586 0%, #b89753 100%);
+            --btn-gold-text: #2c221e;
+            --th-bg: #132238; /* Azul marino oscuro exacto de la referencia */
+            --th-color: #ffffff;
+            --input-border: #d4c4a8;
+            --block-border: #dcd1b5;
         }
 
         body { font-family: Arial, sans-serif; background-color: var(--bg-body); margin: 0; padding: 5px; color: #333; transition: background 0.3s ease; }
@@ -53,57 +57,71 @@
         body.modo-rgb .btn-theme.rgb-active, body.modo-gold .btn-theme.gold-active { background: #334155; color: white; border-color: #1e293b; }
 
         .global-controls { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #eef2f7; padding: 10px; border-radius: 6px; border: 1px solid #dce3ec; }
-        body.modo-gold .global-controls { background: #fdfbf7; border-color: #e6dfd1; }
+        body.modo-gold .global-controls { background: #fbf7ee; border-color: #e5dac2; }
 
         button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; min-width: 130px; }
         button.btn-add-week { background-color: var(--btn-add-week); }
+        
+        /* Estilo Gold para botones */
+        body.modo-gold .global-controls button,
+        body.modo-gold .semana-acciones-header button {
+            background: var(--btn-gold-bg) !important;
+            color: var(--btn-gold-text) !important;
+            border: 1px solid #c5a059 !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        body.modo-gold .btn-del-week {
+            background: var(--btn-gold-bg) !important;
+            color: var(--btn-gold-text) !important;
+        }
+
         button:active { opacity: 0.8; }
 
-        .semana-bloque { background: #fafbfc; border: 1px solid #ccd1d9; border-radius: 6px; padding: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        body.modo-gold .semana-bloque { background: #ffffff; border-color: #dfd7c5; }
+        .semana-bloque { background: #fafbfc; border: 1px solid var(--block-border); border-radius: 6px; padding: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        body.modo-gold .semana-bloque { background: #ffffff; border-color: #dcd1b5; }
 
         .semana-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
         .semana-titulo-container { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 250px; }
         .semana-titulo-input { font-size: 1.05rem; font-weight: bold; color: #2c3e50; border: 1px solid transparent; background: transparent; padding: 3px 6px; border-radius: 4px; width: 100%; }
-        body.modo-gold .semana-titulo-input { color: #5a4a28; }
+        body.modo-gold .semana-titulo-input { color: #2c221e; }
         .semana-titulo-input:not(:disabled) { border-color: #2980b9; background: white; }
         .semana-titulo-input:focus { outline: none; }
         
         .btn-toggle-collapse { background: #7f8c8d; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; min-width: auto; }
+        body.modo-gold .btn-toggle-collapse { background: #b89753; color: white; }
+
         .semana-acciones-header { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-edit-title { background: #34495e; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
         .btn-clear-week { background: #2ecc71; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
-        body.modo-gold .btn-clear-week { background: #c5a059; }
         .btn-del-week { background: #111111; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
         .btn-add-emp { background: #2980b9; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
-        body.modo-gold .btn-add-emp { background: #335577; }
         .btn-pdf-week { background: #e74c3c; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; min-width: auto; }
 
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 5px; min-width: 750px; table-layout: auto; }
-        th, td { border: 1px solid #ddd; padding: 4px; text-align: center; font-size: 0.75rem; vertical-align: middle; }
-        body.modo-gold th, body.modo-gold td { border-color: #e2d9c8; }
+        th, td { border: 1px solid var(--input-border); padding: 4px; text-align: center; font-size: 0.75rem; vertical-align: middle; }
         th { background-color: var(--th-bg); color: var(--th-color); padding: 6px 4px; }
         th:first-child, td:first-child { width: 16%; min-width: 130px; }
         th:not(:first-child):not(.no-print), td:not(:first-child):not(.no-print) { width: 11.4%; }
 
         .empleado-cell { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.7); padding: 2px; border-radius: 3px; }
-        .empleado-input { font-weight: bold; border: 1px solid #ccc; border-radius: 3px; padding: 4px 6px; text-align: left; flex: 1; font-size: 0.75rem; width: 100%; box-sizing: border-box; }
-        body.modo-gold .empleado-input { border-color: #d6ccb1; background: rgba(255,255,255,0.8); }
-        .horas-container { display: flex; align-items: center; gap: 2px; background: #fff; padding: 2px 4px; border-radius: 3px; border: 1px solid #ddd; flex-shrink: 0; }
-        body.modo-gold .horas-container { border-color: #d6ccb1; }
+        .empleado-input { font-weight: bold; border: 1px solid var(--input-border); border-radius: 3px; padding: 4px 6px; text-align: left; flex: 1; font-size: 0.75rem; width: 100%; box-sizing: border-box; }
+        body.modo-gold .empleado-input { background: rgba(255,255,255,0.9); }
+        
+        .horas-container { display: flex; align-items: center; gap: 2px; background: #fff; padding: 2px 4px; border-radius: 3px; border: 1px solid var(--input-border); flex-shrink: 0; }
         .total-horas { font-size: 0.7rem; color: #555; white-space: nowrap; font-weight: bold; }
         
         td textarea { 
             width: 95%; height: 38px; padding: 4px 2px; text-align: center; 
-            border: 1px solid #ccc; border-radius: 3px; font-size: 0.75rem; 
+            border: 1px solid var(--input-border); border-radius: 3px; font-size: 0.75rem; 
             box-sizing: border-box; resize: none; font-family: Arial, sans-serif; line-height: 1.2; 
         }
-        body.modo-gold td textarea { border-color: #d6ccb1; }
+        body.modo-gold td textarea { background: rgba(255,255,255,0.9); }
         
         .btn-eye { background: transparent; border: none; cursor: pointer; font-size: 0.9rem; padding: 2px; min-width: auto; flex: 0; }
         .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 3px; padding: 4px 6px; cursor: pointer; font-size: 0.7rem; min-width: auto; flex: 0; }
         .export-toggle-container { margin-top: 5px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #e9ecef; }
+        body.modo-gold .export-toggle-container { background: #fff; border-color: #e5dac2; }
         
         @page { size: landscape; margin: 8mm; }
         @media print {
@@ -144,8 +162,8 @@
 
         <!-- Controles globales -->
         <div class="global-controls no-print">
-            <button class="btn-add-week" onclick="agregarSemana()">📅 + Nueva Semana</button>
-            <button style="background-color: var(--btn-borrar-todo);" onclick="borrarTodoGeneral()">🗑️ Borrar Todo</button>
+            <button class="btn-add-week" onclick="agregarSemana()">📅 ➕ Nueva Semana</button>
+            <button onclick="borrarTodoGeneral()">🗑️ Borrar Todo</button>
         </div>
 
         <!-- CONTENEDOR PRINCIPAL DONDE SE RENDERIZAN LAS SEMANAS -->
@@ -171,7 +189,6 @@
                 document.getElementById('app-container').style.display = 'block';
             }
             
-            // Cargar tema guardado
             const temaGuardado = localStorage.getItem('horarios_tema_app') || 'rgb';
             cambiarTema(temaGuardado, false);
         });
