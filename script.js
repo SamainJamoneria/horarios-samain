@@ -356,7 +356,11 @@ async function importarPDFSemana(semId, event) {
             contenido.items.forEach(item => {
                 let texto = item.str.trim();
                 if (texto !== '') {
-                    itemsTexto.push({ str: texto, y: Math.round(item.transform[5]), x: Math.round(item.transform[4]) });
+                    itemsTexto.push({ 
+                        str: texto, 
+                        y: Math.round(item.transform[5]), 
+                        x: Math.round(item.transform[4]) 
+                    });
                 }
             });
         }
@@ -364,82 +368,77 @@ async function importarPDFSemana(semId, event) {
         let sem = semanas.find(s => s.id === semId);
         if (!sem) return;
 
-        const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        
-        const palabrasIgnorar = [
-            'empleado', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo', 
-            'acciones', 'total', 'nuevo', 'horario', 'semanal', 'baja', 'libre', 'vacaciones', 'festivo'
-        ];
-
-        let lineasMap = new Map();
-        itemsTexto.forEach(item => {
-            let encontradaY = Array.from(lineasMap.keys()).find(y => Math.abs(y - item.y) < 8);
-            let targetY = encontradaY !== undefined ? encontradaY : item.y;
-            
-            if (!lineasMap.has(targetY)) {
-                lineasMap.set(targetY, []);
-            }
-            lineasMap.get(targetY).push(item);
+        // Filtrar encabezados de la cabecera y metadatos de pie de página
+        let itemsValidos = itemsTexto.filter(item => {
+            let t = item.str.toLowerCase();
+            if (t.includes('horario semanal') || t.includes('samain') || t.includes('página') || t.includes('github.io')) return false;
+            return true;
         });
 
-        let lineasOrdenadasY = Array.from(lineasMap.keys()).sort((a, b) => b - a);
+        // Detectar columnas de coordenadas X basándonos en los nombres de los días si existen, o rangos estándar
+        // Agrupar elementos por bloques verticales (filas de empleados)
+        // Ordenar de arriba a abajo (Y descendente)
+        itemsValidos.sort((a, b) => b.y - a.y);
 
-        let empleadosImportados = [];
+        let filasAgrupadas = [];
+        let filaActual = [];
+        let ultimaY = null;
 
-        lineasOrdenadasY.forEach(y => {
-            let lineaItems = lineasMap.get(y);
-            lineaItems.sort((a, b) => a.x - b.x);
+        itemsValidos.forEach(item => {
+            if (ultimaY === null || Math.abs(item.y - ultimaY) > 12) {
+                if (filaActual.length > 0) {
+                    filasAgrupadas.push(filaActual);
+                }
+                filaActual = [item];
+                ultimaY = item.y;
+            } else {
+                filaActual.push(item);
+            }
+        });
+        if (filaActual.length > 0) {
+            filasAgrupadas.push(filaActual);
+        }
 
-            let textosLinea = lineaItems.map(it => it.str);
-            if (textosLinea.length === 0) return;
+        const listaNombresEmpleadosFijos = ['pablo', 'daisy', 'gabri', 'fer', 'victoria', 'luis', 'vivi'];
+        let empleadosMap = new Map();
 
-            let primerTexto = textosLinea[0];
+        // Inicializar empleados conocidos en orden
+        listaNombresEmpleadosFijos.forEach(nombre => {
+            let nombreCapitalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+            empleadosMap.set(nombreCapitalizado, {
+                id: 'emp_' + Math.random().toString(36).substring(2, 7),
+                nombre: nombreCapitalizado,
+                dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' },
+                ocultoPdf: false
+            });
+        });
+
+        let empleadoActualKey = null;
+
+        filasAgrupadas.forEach(fila => {
+            fila.sort((a, b) => a.x - b.x);
+            let primerTexto = fila[0].str;
             let primerLower = primerTexto.toLowerCase();
 
-            let esNombreInvalido = (
-                palabrasIgnorar.some(palabra => primerLower.includes(palabra)) ||
-                primerTexto.includes(':') ||
-                /\d/.test(primerTexto) ||
-                primerTexto.toLowerCase().endsWith('h') ||
-                primerTexto.length < 2
-            );
-
-            if (!esNombreInvalido) {
-                let nombreEmpleado = primerTexto;
-                let diasEmpleado = { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' };
-                
-                let tokensTurnos = textosLinea.slice(1);
-                let diaIndex = 0;
-                let turnoActual = '';
-
-                tokensTurnos.forEach(token => {
-                    let tokenLower = token.toLowerCase();
-                    let esSeparador = token === 'a' || token === '-' || token === 'hasta';
-
-                    if (esSeparador) {
-                        turnoActual += ' ' + token;
-                    } else if (turnoActual !== '' && !token.includes(':') && !/\d/.test(token) && !tokenLower.includes('libre') && !tokenLower.includes('baja')) {
-                        turnoActual += ' ' + token;
-                    } else {
-                        if (turnoActual !== '' && diaIndex < diasSemana.length) {
-                            diasEmpleado[diasSemana[diaIndex]] = turnoActual.trim();
-                            diaIndex++;
-                        }
-                        turnoActual = token;
-                    }
-                });
-
-                if (turnoActual !== '' && diaIndex < diasSemana.length) {
-                    diasEmpleado[diasSemana[diaIndex]] = turnoActual.trim();
+            // Comprobar si esta línea empieza con el nombre de un empleado
+            let nombreEncontrado = Array.from(empleadosMap.keys()).find(n => n.toLowerCase() === primerLower);
+            
+            if (nombreEncontrado) {
+                empleadoActualKey = nombreEncontrado;
+                // Si hay elementos adicionales en esta misma línea horizontal de la cabecera del empleado, pueden ser del lunes
+                let restoItems = fila.slice(1);
+                if (restoItems.length > 0 && empleadoActualKey) {
+                    procesarItemsEnDias(empleadosMap.get(empleadoActualKey), restoItems);
                 }
-
-                empleadosImportados.push({
-                    id: 'emp_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-                    nombre: nombreEmpleado,
-                    dias: diasEmpleado,
-                    ocultoPdf: false
-                });
+            } else if (empleadoActualKey) {
+                // Es una línea de continuación de turnos para el empleado actual
+                procesarItemsEnDias(empleadosMap.get(empleadoActualKey), fila);
             }
+        });
+
+        let empleadosImportados = Array.from(empleadosMap.values()).filter(emp => {
+            // Comprobar si tiene algún día con contenido
+            return Object.values(emp.dias).some(d => d.trim() !== '');
         });
 
         if (empleadosImportados.length > 0) {
@@ -448,7 +447,7 @@ async function importarPDFSemana(semId, event) {
             renderizar();
             alert(`¡Importación correcta! Se han cargado ${empleadosImportados.length} empleados.`);
         } else {
-            alert("No se han podido reconocer los turnos automáticamente en este PDF.");
+            alert("No se han podido reconocer los turnos automáticamente. Comprueba que el PDF sea el estándar de la aplicación.");
         }
 
     } catch (error) {
@@ -457,6 +456,40 @@ async function importarPDFSemana(semId, event) {
     } finally {
         event.target.value = '';
     }
+}
+
+// Función auxiliar para clasificar los textos de los turnos según su posición X aproximada en columnas (Lunes a Domingo)
+function procesarItemsEnDias(empObj, itemsFila) {
+    const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    
+    // Como el PDF distribuye las 7 columnas de izquierda a derecha por coordenadas X:
+    // Agrupamos los elementos de la fila según su posición X horizontal aproximada
+    itemsFila.forEach(item => {
+        let x = item.x;
+        let diaAsignado = '';
+        
+        // Rangos de coordenadas X estimados para una página A4 horizontal o vertical estándar de horarios
+        if (x < 110) diaAsignado = 'Lunes';
+        else if (x < 170) diaAsignado = 'Martes';
+        else if (x < 230) diaAsignado = 'Miércoles';
+        else if (x < 290) diaAsignado = 'Jueves';
+        else if (x < 350) diaAsignado = 'Viernes';
+        else if (x < 410) diaAsignado = 'Sábado';
+        else diaAsignado = 'Domingo';
+
+        let textoLimpio = item.str;
+        if (empObj.dias[diaAsignado]) {
+            // Si ya hay texto, unimos inteligentemente (ej: "10:00 a" + "16:00" -> "10:00 a 16:00")
+            let actual = empObj.dias[diaAsignado];
+            if (actual.endsWith('a') || actual.endsWith('-') || actual.endsWith('hasta')) {
+                empObj.dias[diaAsignado] = actual + ' ' + textoLimpio;
+            } else {
+                empObj.dias[diaAsignado] = actual + '\n' + textoLimpio;
+            }
+        } else {
+            empObj.dias[diaAsignado] = textoLimpio;
+        }
+    });
 }
 
 function renderizar() {
