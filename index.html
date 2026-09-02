@@ -205,6 +205,10 @@
             if (guardar) {
                 localStorage.setItem('horarios_tema_app', tipo);
             }
+            // Forzar renderizado inmediato para actualizar los colores de las filas
+            if (typeof renderizar === 'function') {
+                renderizar();
+            }
         }
     </script>
     <script src="script.js"></script>
