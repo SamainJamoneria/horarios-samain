@@ -638,6 +638,12 @@ function renderizar() {
             </div>`;
         }
 
+        html += `
+            <div class="logo-marca-agua">
+                <img src="LOGO.png" alt="Samaín La Cormelana">
+            </div>
+        `;
+
         html += `</div>`;
     });
 
