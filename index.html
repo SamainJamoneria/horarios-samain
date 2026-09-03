@@ -52,8 +52,28 @@
 
         .container { width: 100%; max-width: 100%; margin: auto; background: var(--bg-container); padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; display: block; }
         
+        /* Contenedor superior para Título y Selector de Temas */
+        .top-bar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .app-main-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #2c3e50;
+            letter-spacing: -0.3px;
+        }
+        body.modo-gold .app-main-title {
+            color: #2c221e;
+        }
+
         /* Selector de Temas */
-        .theme-selector { display: flex; gap: 6px; margin-bottom: 10px; justify-content: flex-end; }
+        .theme-selector { display: flex; gap: 6px; justify-content: flex-end; }
         .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; min-width: auto; flex: unset; display: inline-flex; align-items: center; gap: 4px; }
         body.modo-rgb .btn-theme.rgb-active, body.modo-gold .btn-theme.gold-active { background: #334155; color: white; border-color: #1e293b; }
 
@@ -133,7 +153,7 @@
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
-            #pantalla-login, .theme-selector { display: none !important; }
+            #pantalla-login, .top-bar-container { display: none !important; }
             .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container, .atajos-toolbar { display: none !important; }
             .semana-bloque { display: none !important; border: none; margin: 0; padding: 0; box-shadow: none; }
             .semana-bloque.imprimiendo-activo { display: block !important; }
@@ -173,10 +193,13 @@
     </div>
 
     <div class="container" id="app-container" style="display: none;">
-        <!-- Selector de Tema con iconos rgb.png y gold.png -->
-        <div class="theme-selector no-print">
-            <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> Modo RGB</button>
-            <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Modo Gold</button>
+        <!-- Cabecera superior con Título "Horarios Samaín" y Selector de Tema -->
+        <div class="top-bar-container no-print">
+            <span class="app-main-title">Horarios Samaín</span>
+            <div class="theme-selector">
+                <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> Modo RGB</button>
+                <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Modo Gold</button>
+            </div>
         </div>
 
         <!-- Controles globales con semana.png y papelera.png -->
