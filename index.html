@@ -50,9 +50,9 @@
         .login-card input { width: 100%; padding: 10px; margin-bottom: 12px; box-sizing: border-box; text-align: center; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
         .login-card button { width: 100%; padding: 10px; background-color: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
+        /* VISTA MÓVIL (Por defecto): Ancho completo */
         .container { width: 100%; max-width: 100%; margin: auto; background: var(--bg-container); padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; display: block; }
         
-        /* VISTA MÓVIL (Por defecto): Título arriba, selector centrado abajo con textos cortos */
         .app-main-title {
             font-size: 1.15rem;
             font-weight: 800;
@@ -63,46 +63,13 @@
         body.modo-gold .app-main-title { color: #2c221e; }
 
         .theme-selector { display: flex; gap: 6px; margin-bottom: 10px; justify-content: center; }
-        .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; min-width: auto; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; min-width: auto; display: inline-flex; align-items: center; gap: 4px; }
         body.modo-rgb .btn-theme.rgb-active, body.modo-gold .btn-theme.gold-active { background: #334155; color: white; border-color: #1e293b; }
-
-        /* VISTA PC (Pantallas >= 768px): Título a la izquierda y modos a la derecha en una sola línea */
-        @media (min-width: 768px) {
-            .top-bar-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 15px;
-                background: #f8fafc;
-                padding: 10px 15px;
-                border-radius: 6px;
-                border: 1px solid #e2e8f0;
-            }
-            body.modo-gold .top-bar-container {
-                background: #fcf9f2;
-                border-color: #e5dac2;
-            }
-            .top-bar-container .app-main-title {
-                margin-bottom: 0;
-                display: inline-block;
-            }
-            .top-bar-container .theme-selector {
-                margin-bottom: 0;
-                justify-content: flex-end;
-            }
-            .global-controls {
-                justify-content: flex-start !important;
-            }
-            .global-controls button {
-                flex: 0 1 auto !important;
-                min-width: 180px !important;
-            }
-        }
 
         .global-controls { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #eef2f7; padding: 10px; border-radius: 6px; border: 1px solid #dce3ec; }
         body.modo-gold .global-controls { background: #fbf7ee; border-color: #e5dac2; }
 
-        button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        button { background-color: #27ae60; color: white; border: none; padding: 8px 10px; border-radius: 5px; font-weight: bold; cursor: pointer; flex: 1; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 130px; }
         button.btn-add-week { background-color: var(--btn-add-week); }
         
         /* Estilo Gold para botones */
@@ -119,8 +86,39 @@
         }
 
         button:active { opacity: 0.8; }
+        .icon-btn { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; }
 
-        .icon-btn { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; }
+        /* SÓLO EN PC (Pantallas >= 768px): Margen a ambos lados limitando el ancho del contenedor, cabecera en línea y botones proporcionados */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 96%; /* Deja un pequeño margen lateral en pantallas grandes (puedes cambiarlo a 92% o los píxeles que desees) */
+                margin: 15px auto; /* Centra el contenedor y añade separación superior/inferior */
+                padding: 15px;
+            }
+            .top-bar-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+                padding: 0 2px;
+            }
+            .top-bar-container .app-main-title {
+                margin-bottom: 0;
+                display: inline-block;
+                font-size: 1.3rem;
+            }
+            .top-bar-container .theme-selector {
+                margin-bottom: 0;
+                justify-content: flex-end;
+            }
+            .global-controls {
+                justify-content: flex-start !important;
+            }
+            .global-controls button {
+                flex: 0 0 auto !important;
+                min-width: 150px !important;
+            }
+        }
 
         .semana-bloque { background: #fafbfc; border: 1px solid var(--block-border); border-radius: 6px; padding: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         body.modo-gold .semana-bloque { background: #ffffff; border-color: #dcd1b5; }
@@ -174,7 +172,7 @@
         @page { size: landscape; margin: 8mm; }
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
+            .container { box-shadow: none; padding: 0; width: 100%; display: block !important; margin: 0 !important; max-width: 100% !important; }
             #pantalla-login, .top-bar-container { display: none !important; }
             .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container, .atajos-toolbar { display: none !important; }
             .semana-bloque { display: none !important; border: none; margin: 0; padding: 0; box-shadow: none; }
@@ -215,16 +213,16 @@
     </div>
 
     <div class="container" id="app-container" style="display: none;">
-        <!-- Cabecera adaptativa: En móvil va separado, en PC se coloca en una sola línea -->
+        <!-- Cabecera adaptativa -->
         <div class="top-bar-container no-print">
             <span class="app-main-title">Horarios Samaín</span>
             <div class="theme-selector">
-                <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> RGB</button>
-                <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Gold</button>
+                <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> Modo RGB</button>
+                <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Modo Gold</button>
             </div>
         </div>
 
-        <!-- Controles globales con semana.png y papelera.png -->
+        <!-- Controles globales -->
         <div class="global-controls no-print">
             <button class="btn-add-week" onclick="agregarSemana()"><img src="semana.png" class="icon-btn" alt=""> Nueva Semana</button>
             <button onclick="borrarTodoGeneral()"><img src="papelera.png" class="icon-btn" alt=""> Borrar Todo</button>
