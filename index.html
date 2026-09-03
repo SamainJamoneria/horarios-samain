@@ -52,30 +52,47 @@
 
         .container { width: 100%; max-width: 100%; margin: auto; background: var(--bg-container); padding: 10px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); box-sizing: border-box; display: block; }
         
-        /* Cabecera superior para Título y Selector de Temas en una sola línea */
-        .top-bar-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 5px;
-        }
-
+        /* Por defecto (móvil): el título va en su propia línea como antes */
         .app-main-title {
-            font-size: 1rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: #2c3e50;
-            letter-spacing: -0.3px;
-            white-space: nowrap;
+            margin-bottom: 8px;
+            display: block;
         }
         body.modo-gold .app-main-title {
             color: #2c221e;
         }
 
-        /* Selector de Temas */
-        .theme-selector { display: flex; gap: 4px; justify-content: flex-end; }
-        .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; cursor: pointer; min-width: auto; flex: unset; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+        /* Selector de Temas por defecto (móvil) */
+        .theme-selector { display: flex; gap: 6px; margin-bottom: 10px; justify-content: flex-end; }
+        .btn-theme { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; min-width: auto; flex: unset; display: inline-flex; align-items: center; gap: 4px; }
         body.modo-rgb .btn-theme.rgb-active, body.modo-gold .btn-theme.gold-active { background: #334155; color: white; border-color: #1e293b; }
+
+        /* SÓLO EN PC (Pantallas mayores o iguales a 768px): Agrupamos título y modos en una misma fila */
+        @media (min-width: 768px) {
+            .desktop-header-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+                background: #f8fafc;
+                padding: 8px 12px;
+                border-radius: 6px;
+                border: 1px solid #e2e8f0;
+            }
+            body.modo-gold .desktop-header-bar {
+                background: #fcf9f2;
+                border-color: #e5dac2;
+            }
+            .desktop-header-bar .app-main-title {
+                margin-bottom: 0;
+                display: inline-block;
+            }
+            .desktop-header-bar .theme-selector {
+                margin-bottom: 0;
+            }
+        }
 
         .global-controls { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; background: #eef2f7; padding: 10px; border-radius: 6px; border: 1px solid #dce3ec; }
         body.modo-gold .global-controls { background: #fbf7ee; border-color: #e5dac2; }
@@ -98,7 +115,7 @@
 
         button:active { opacity: 0.8; }
 
-        .icon-btn { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
+        .icon-btn { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; }
 
         .semana-bloque { background: #fafbfc; border: 1px solid var(--block-border); border-radius: 6px; padding: 10px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         body.modo-gold .semana-bloque { background: #ffffff; border-color: #dcd1b5; }
@@ -153,7 +170,7 @@
         @media print {
             body { background: white; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .container { box-shadow: none; padding: 0; width: 100%; display: block !important; }
-            #pantalla-login, .top-bar-container { display: none !important; }
+            #pantalla-login, .desktop-header-bar, .theme-selector { display: none !important; }
             .global-controls, .semana-acciones-header, button, .no-print, .btn-eye-horas, .export-toggle-container, .atajos-toolbar { display: none !important; }
             .semana-bloque { display: none !important; border: none; margin: 0; padding: 0; box-shadow: none; }
             .semana-bloque.imprimiendo-activo { display: block !important; }
@@ -193,12 +210,12 @@
     </div>
 
     <div class="container" id="app-container" style="display: none;">
-        <!-- Cabecera superior: Título a la izquierda y Selector de Tema a la derecha en la misma línea -->
-        <div class="top-bar-container no-print">
+        <!-- Contenedor adaptativo: En PC se pone en línea (título izq, modos der); en móvil mantiene orden original -->
+        <div class="desktop-header-bar no-print">
             <span class="app-main-title">Horarios Samaín</span>
             <div class="theme-selector">
-                <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> RGB</button>
-                <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Gold</button>
+                <button class="btn-theme rgb-active" onclick="cambiarTema('rgb')"><img src="rgb.png" class="icon-btn" alt=""> Modo RGB</button>
+                <button class="btn-theme gold-active" onclick="cambiarTema('gold')"><img src="gold.png" class="icon-btn" alt=""> Modo Gold</button>
             </div>
         </div>
 
