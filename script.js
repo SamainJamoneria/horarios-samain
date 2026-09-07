@@ -1,7 +1,5 @@
 let semanas = [];
 let celdasActivasPorSemana = {}; 
-let atajos = [];
-let modoEdicionAtajos = false;
 
 const PALETA_COLORES_SUAVES = [
     '#fff3cd', 
@@ -55,7 +53,6 @@ function obtenerColorEmpleado(nombreEmpleado) {
 
 window.addEventListener('DOMContentLoaded', () => {
     cargarDatos();
-    cargarAtajos();
     if (semanas.length === 0) {
         agregarSemanaPorDefecto();
     } else {
@@ -90,25 +87,6 @@ function cargarDatos() {
         } catch(e) {
             semanas = [];
         }
-    }
-}
-
-function guardarAtajos() {
-    localStorage.setItem('horarios_atajos_v1', JSON.stringify(atajos));
-}
-
-function cargarAtajos() {
-    const guardado = localStorage.getItem('horarios_atajos_v1');
-    if (guardado) {
-        try {
-            atajos = JSON.parse(guardado);
-        } catch (e) {
-            atajos = [];
-        }
-    }
-    if (!atajos || atajos.length === 0) {
-        atajos = ['Libre', '10:00 a 16:00', '16:00 a 00:00'];
-        guardarAtajos();
     }
 }
 
@@ -217,39 +195,6 @@ function toggleAtajos(semId) {
     if (sem) {
         sem.atajosOcultos = !sem.atajosOcultos;
         guardarDatos();
-        renderizar();
-    }
-}
-
-function toggleEdicionAtajos() {
-    modoEdicionAtajos = !modoEdicionAtajos;
-    renderizar();
-}
-
-function agregarAtajoNuevo() {
-    let texto = prompt('Texto del nuevo atajo (ej: 09:00 a 14:00):');
-    if (texto && texto.trim() !== '') {
-        atajos.push(texto.trim());
-        guardarAtajos();
-        renderizar();
-    }
-}
-
-function editarAtajo(index) {
-    let actual = atajos[index];
-    if (actual === undefined) return;
-    let nuevo = prompt('Editar atajo:', actual);
-    if (nuevo !== null && nuevo.trim() !== '') {
-        atajos[index] = nuevo.trim();
-        guardarAtajos();
-        renderizar();
-    }
-}
-
-function eliminarAtajo(index) {
-    if (confirm('¿Eliminar este atajo?')) {
-        atajos.splice(index, 1);
-        guardarAtajos();
         renderizar();
     }
 }
@@ -586,7 +531,7 @@ function renderizar() {
 
         html += `
         <div class="semana-bloque" id="bloque_${sem.id}">
-            <div class="semana-header" style="margin-bottom: ${sem.colapsado ? '0' : '10px'};">
+            <div class="semana-header" style="margin-bottom: ${sem.colapsado ? '0' : '8px'};">
                 <div class="semana-titulo-container">
                     <button class="btn-toggle-collapse" onclick="toggleColapsarSemana('${sem.id}')" title="Contraer / Expandir">
                         ${sem.colapsado ? '▼' : '▲'}
@@ -599,13 +544,13 @@ function renderizar() {
         if (!sem.colapsado) {
             html += `
                 <div class="semana-acciones-header">
-                    <button class="btn btn-outline btn-sm" onclick="toggleEditarTitulo('${sem.id}')">${textoBtnEditar}</button>
-                    <button class="btn btn-outline btn-sm" onclick="limpiarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Borrar Datos</button>
-                    <button class="btn btn-outline btn-sm" onclick="agregarEmpleado('${sem.id}')"><img src="mas.png" class="icon-btn" alt=""> Empleado</button>
-                    <button class="btn btn-primary btn-sm" onclick="exportarPDFSemana('${sem.id}')"><img src="pdf.png" class="icon-btn" alt=""> Crear PDF</button>
-                    <button class="btn btn-outline btn-sm" onclick="dispararImportarPDF('${sem.id}')"><img src="importpdf.png" class="icon-btn" alt=""> Importar PDF</button>
+                    <button class="btn-edit-title" onclick="toggleEditarTitulo('${sem.id}')">${textoBtnEditar}</button>
+                    <button class="btn-clear-emp btn-clear-week" onclick="limpiarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Borrar Datos</button>
+                    <button class="btn-add-emp" onclick="agregarEmpleado('${sem.id}')"><img src="mas.png" class="icon-btn" alt=""> Empleado</button>
+                    <button class="btn-pdf-week" onclick="exportarPDFSemana('${sem.id}')"><img src="pdf.png" class="icon-btn" alt=""> Crear PDF</button>
+                    <button class="btn-pdf-import" onclick="dispararImportarPDF('${sem.id}')" style="background: #4a5568; color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"><img src="importpdf.png" class="icon-btn" alt=""> Importar PDF</button>
                     <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
-                    <button class="btn btn-danger btn-sm" onclick="eliminarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Eliminar Semana</button>
+                    <button class="btn-del-week" onclick="eliminarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Eliminar Semana</button>
                 </div>`;
         }
 
@@ -615,35 +560,21 @@ function renderizar() {
             let atajosOcultos = sem.atajosOcultos || false;
 
             html += `
-            <div class="atajos-toolbar no-print">
-                <div class="atajos-cabecera ${atajosOcultos ? '' : 'con-margen'}">
-                    <span class="atajos-label"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos</span>
-                    <div style="display:flex; gap:8px;">
-                        ${!atajosOcultos ? `<button type="button" class="btn-toggle-atajos" onclick="toggleEdicionAtajos()">${modoEdicionAtajos ? 'Listo ✔️' : 'Editar ✏️'}</button>` : ''}
-                        <button type="button" class="btn-toggle-atajos" onclick="toggleAtajos('${sem.id}')">
-                            ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
-                        </button>
-                    </div>
+            <div class="atajos-toolbar no-print" style="margin-bottom: 8px; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; ${atajosOcultos ? '' : 'margin-bottom: 6px;'}">
+                    <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos:</span>
+                    <button type="button" onclick="toggleAtajos('${sem.id}')" style="background: transparent; border: none; color: #3b82f6; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0; min-width: auto; flex: unset;">
+                        ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
+                    </button>
                 </div>`;
 
             if (!atajosOcultos) {
-                html += `<div class="atajos-botones">`;
-                atajos.forEach((texto, idx) => {
-                    let textoEscapado = texto.replace(/'/g, "\\'");
-                    if (modoEdicionAtajos) {
-                        html += `
-                            <div style="display:flex; align-items:center; gap:2px;">
-                                <button type="button" class="btn-atajo" onclick="editarAtajo(${idx})" title="Clic para editar el texto">${texto}</button>
-                                <button type="button" onclick="eliminarAtajo(${idx})" title="Eliminar atajo" style="border:none; background:#e57373; color:#fff; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:12px; line-height:1;">✕</button>
-                            </div>`;
-                    } else {
-                        html += `<button type="button" class="btn-atajo" style="flex:1;" onclick="aplicarAtajoSemana('${sem.id}', '${textoEscapado}')">${texto}</button>`;
-                    }
-                });
-                if (modoEdicionAtajos) {
-                    html += `<button type="button" onclick="agregarAtajoNuevo()" style="border:1px dashed #999; background:transparent; border-radius:6px; padding:6px 10px; cursor:pointer;">+ Añadir atajo</button>`;
-                }
-                html += `</div>`;
+                html += `
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 1; min-width: 70px;">Libre</button>
+                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 2; min-width: 110px;">10:00 a 16:00</button>
+                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 2; min-width: 110px;">16:00 a 00:00</button>
+                </div>`;
             }
 
             html += `
@@ -669,8 +600,8 @@ function renderizar() {
                 html += `
                         <tr class="${claseOculto}" style="${estiloFila} background-color: ${colorSuave};">
                             <td>
-                                <div class="empleado-cell">
-                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value, this)">
+                                <div class="empleado-cell" style="background: transparent;">
+                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value, this)" style="background: rgba(255,255,255,0.6);">
                                     <div class="horas-container">
                                         <span class="total-horas" id="horas_${sem.id}_${emp.id}">${totalH}h</span>
                                     </div>
@@ -682,15 +613,15 @@ function renderizar() {
                     html += `
                             <td>
                                 <textarea 
-                                    class="day-textarea"
                                     oninput="actualizarTurno('${sem.id}', '${emp.id}', '${dia}', this.value)" 
                                     onfocus="registrarCeldaActiva('${sem.id}', '${emp.id}', '${dia}', this)"
+                                    style="background: rgba(255,255,255,0.7);"
                                 >${valorDia}</textarea>
                             </td>`;
                 });
 
                 html += `
-                            <td class="no-print celda-acciones">
+                            <td class="no-print" style="display: flex; gap: 4px; justify-content: center; align-items: center; border: none; height: 100%;">
                                 <button class="btn-eye" onclick="toggleOcultoPdf('${sem.id}', '${emp.id}')" title="Mostrar/Ocultar em PDF">${iconoOjo}</button>
                                 <button class="btn-delete" onclick="eliminarEmpleado('${sem.id}', '${emp.id}')">X</button>
                             </td>
