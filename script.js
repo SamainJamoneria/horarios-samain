@@ -84,6 +84,16 @@ function cargarDatos() {
     if (guardado) {
         try {
             semanas = JSON.parse(guardado);
+            // Asegurar compatibilidad con semanas antiguas
+            semanas.forEach(sem => {
+                if (!sem.atajos) {
+                    sem.atajos = [
+                        { texto: 'Libre', ancho: '1' },
+                        { texto: '10:00 a 16:00', ancho: '2' },
+                        { texto: '16:00 a 00:00', ancho: '2' }
+                    ];
+                }
+            });
         } catch(e) {
             semanas = [];
         }
@@ -98,6 +108,12 @@ function agregarSemanaPorDefecto() {
         colapsado: false,
         mostrarTotalPdf: false,
         atajosOcultos: false,
+        editandoAtajos: false,
+        atajos: [
+            { texto: 'Libre', ancho: '1' },
+            { texto: '10:00 a 16:00', ancho: '2' },
+            { texto: '16:00 a 00:00', ancho: '2' }
+        ],
         empleados: [
             { id: 'emp_1', nombre: 'Pablo', dias: { Lunes: '16:00', Martes: '16:00', Miércoles: '16:00', Jueves: '16:00', Viernes: '16:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
             { id: 'emp_2', nombre: 'Daisy', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
@@ -120,6 +136,12 @@ function agregarSemana() {
         colapsado: false,
         mostrarTotalPdf: false,
         atajosOcultos: false,
+        editandoAtajos: false,
+        atajos: [
+            { texto: 'Libre', ancho: '1' },
+            { texto: '10:00 a 16:00', ancho: '2' },
+            { texto: '16:00 a 00:00', ancho: '2' }
+        ],
         empleados: [
             { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
         ]
@@ -194,6 +216,42 @@ function toggleAtajos(semId) {
     let sem = semanas.find(s => s.id === semId);
     if (sem) {
         sem.atajosOcultos = !sem.atajosOcultos;
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function toggleEditarAtajos(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.editandoAtajos = !sem.editandoAtajos;
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function agregarAtajoPersonalizado(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        if (!sem.atajos) sem.atajos = [];
+        sem.atajos.push({ texto: 'Nuevo turno', ancho: '2' });
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function actualizarTextoAtajo(semId, index, nuevoTexto) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem && sem.atajos && sem.atajos[index]) {
+        sem.atajos[index].texto = nuevoTexto;
+        guardarDatos();
+    }
+}
+
+function eliminarAtajo(semId, index) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem && sem.atajos) {
+        sem.atajos.splice(index, 1);
         guardarDatos();
         renderizar();
     }
@@ -558,23 +616,49 @@ function renderizar() {
 
         if (!sem.colapsado) {
             let atajosOcultos = sem.atajosOcultos || false;
+            let editandoAtajos = sem.editandoAtajos || false;
+            if (!sem.atajos) {
+                sem.atajos = [
+                    { texto: 'Libre', ancho: '1' },
+                    { texto: '10:00 a 16:00', ancho: '2' },
+                    { texto: '16:00 a 00:00', ancho: '2' }
+                ];
+            }
 
             html += `
             <div class="atajos-toolbar no-print" style="margin-bottom: 8px; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 <div style="display: flex; justify-content: space-between; align-items: center; ${atajosOcultos ? '' : 'margin-bottom: 6px;'}">
-                    <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos:</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos:</span>
+                        <button type="button" onclick="toggleEditarAtajos('${sem.id}')" title="Editar atajos" style="background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
+                            <img src="editar.png" class="icon-btn" alt="" style="width: 10px; height: 10px;"> ${editandoAtajos ? 'Listo' : 'Editar'}
+                        </button>
+                    </div>
                     <button type="button" onclick="toggleAtajos('${sem.id}')" style="background: transparent; border: none; color: #3b82f6; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0; min-width: auto; flex: unset;">
                         ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
                     </button>
                 </div>`;
 
             if (!atajosOcultos) {
-                html += `
-                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', 'Libre')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 1; min-width: 70px;">Libre</button>
-                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '10:00 a 16:00')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 2; min-width: 110px;">10:00 a 16:00</button>
-                    <button type="button" onclick="aplicarAtajoSemana('${sem.id}', '16:00 a 00:00')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: 2; min-width: 110px;">16:00 a 00:00</button>
-                </div>`;
+                if (!editandoAtajos) {
+                    html += `<div style="display: flex; flex-wrap: wrap; gap: 6px;">`;
+                    sem.atajos.forEach(atajo => {
+                        html += `<button type="button" onclick="aplicarAtajoSemana('${sem.id}', '${atajo.texto}')" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 500; flex: ${atajo.ancho}; min-width: 70px;">${atajo.texto}</button>`;
+                    });
+                    html += `</div>`;
+                } else {
+                    html += `<div style="display: flex; flex-direction: column; gap: 6px;">`;
+                    sem.atajos.forEach((atajo, idx) => {
+                        html += `
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <input type="text" value="${atajo.texto}" oninput="actualizarTextoAtajo('${sem.id}', ${idx}, this.value)" style="flex: 1; background: #ffffff; border: 1px solid #cbd5e1; padding: 3px 6px; border-radius: 4px; font-size: 11px;">
+                            <button type="button" onclick="eliminarAtajo('${sem.id}', ${idx})" style="background: #fee2e2; color: #dc2626; border: 1px solid #f87171; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" title="Eliminar atajo">X</button>
+                        </div>`;
+                    });
+                    html += `
+                        <button type="button" onclick="agregarAtajoPersonalizado('${sem.id}')" style="background: #e0f2fe; color: #0284c7; border: 1px dashed #38bdf8; padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center;">+ Añadir atajo nuevo</button>
+                    </div>`;
+                }
             }
 
             html += `
