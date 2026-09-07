@@ -1,193 +1,720 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Turnos y Atajos</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        .container {
-            background: #ffffff;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-        h2 {
-            margin-top: 0;
-            font-size: 1.25rem;
-            color: #111827;
-        }
-        .atajos-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .atajo-btn {
-            background-color: #e5e7eb;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: background-color 0.2s;
-        }
-        .atajo-btn:hover {
-            background-color: #d1d5db;
-        }
-        .btn-accion {
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        .btn-accion:hover {
-            background-color: #4338ca;
-        }
-        .eliminar-atajo {
-            background: none;
-            border: none;
-            color: #ef4444;
-            cursor: pointer;
-            font-weight: bold;
-            padding: 0;
-            font-size: 0.75rem;
-        }
-    </style>
-</head>
-<body>
+let semanas = [];
+let celdasActivasPorSemana = {}; 
+let atajos = [];
+let modoEdicionAtajos = false;
 
-<div class="container">
-    <h2>Atajos Rápidos de Turnos</h2>
-    <div id="lista-atajos" class="atajos-container">
-        <!-- Los atajos se cargarán dinámicamente aquí -->
-    </div>
-    <button id="btn-editar-atajos" class="btn-accion" onclick="alternarModoEdicionAtajos()">✏️ Editar Atajos</button>
-</div>
+const PALETA_COLORES_SUAVES = [
+    '#fff3cd', 
+    '#e8f4f8', 
+    '#ffffff', 
+    '#f8d7da', 
+    '#d4edda', 
+    '#f5e6d3', 
+    '#e2e2e2', 
+    '#fce8e6', 
+    '#fbe5f2', 
+    '#e2f0d9'  
+];
 
-<script>
-    // Variables de Estado Globales para los atajos y modo edición
-    let atajos = [];
-    let modoEdicionAtajos = false;
+const PALETA_COLORES_GOLD = [
+    '#fdf9ed', 
+    '#f0f5fa', 
+    '#ffffff', 
+    '#f7f1e3', 
+    '#e8f1f6', 
+    '#fffdfa'  
+];
 
-    // Persistencia Local: Cargar atajos desde localStorage o usar valores por defecto
-    function cargarAtajos() {
-        const guardados = localStorage.getItem('atajos_turnos');
-        if (guardados) {
-            atajos = JSON.parse(guardados);
-        } else {
-            atajos = ['Libre', '10:00 a 16:00', '16:00 a 00:00'];
-            guardarAtajos();
-        }
-    }
+function obtenerColorEmpleado(nombreEmpleado) {
+    if (!nombreEmpleado) nombreEmpleado = '';
+    let nombreTrim = nombreEmpleado.trim().toLowerCase();
 
-    // Persistencia Local: Guardar atajos en localStorage
-    function guardarAtajos() {
-        localStorage.setItem('atajos_turnos', JSON.stringify(atajos));
-    }
+    let esGold = document.body.classList.contains('modo-gold');
+    let paletaActiva = esGold ? PALETA_COLORES_GOLD : PALETA_COLORES_SUAVES;
 
-    // Renderizar la interfaz de los atajos según el modo (normal o edición)
-    function renderizarAtajos() {
-        const contenedor = document.getElementById('lista-atajos');
-        const btnEditar = document.getElementById('btn-editar-atajos');
-        
-        contenedor.innerHTML = '';
+    let mapaColores = new Map();
+    let colorIndex = 0;
 
-        atajos.forEach((atajo, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'atajo-btn';
-            
-            if (!modoEdicionAtajos) {
-                btn.innerHTML = `<span>${atajo}</span>`;
-                btn.onclick = () => seleccionarAtajo(atajo);
-            } else {
-                btn.innerHTML = `
-                    <span onclick="editarAtajo(${index})" style="cursor:pointer;" title="Editar">${atajo} ✏️</span>
-                    <button class="eliminar-atajo" onclick="eliminarAtajo(${index})" title="Eliminar">❌</button>
-                `;
+    semanas.forEach(sem => {
+        sem.empleados.forEach(emp => {
+            let n = emp.nombre ? emp.nombre.trim().toLowerCase() : '';
+            if (n && !mapaColores.has(n)) {
+                mapaColores.set(n, paletaActiva[colorIndex % paletaActiva.length]);
+                colorIndex++;
             }
-            contenedor.appendChild(btn);
+        });
+    });
+
+    if (mapaColores.has(nombreTrim)) {
+        return mapaColores.get(nombreTrim);
+    }
+
+    let colorAsignado = paletaActiva[mapaColores.size % paletaActiva.length];
+    return colorAsignado;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    cargarDatos();
+    cargarAtajos();
+    if (semanas.length === 0) {
+        agregarSemanaPorDefecto();
+    } else {
+        renderizar();
+    }
+});
+
+function registrarCeldaActiva(semId, empId, dia, textareaElem) {
+    celdasActivasPorSemana[semId] = { empId, dia, textarea: textareaElem };
+}
+
+function aplicarAtajoSemana(semId, textoTurno) {
+    let activa = celdasActivasPorSemana[semId];
+    if (!activa || !activa.textarea) {
+        alert("Haz clic primero en la celda del día donde quieras aplicar el atajo.");
+        return;
+    }
+
+    activa.textarea.value = textoTurno;
+    actualizarTurno(semId, activa.empId, activa.dia, textoTurno);
+}
+
+function guardarDatos() {
+    localStorage.setItem('horarios_semanas_v2', JSON.stringify(semanas));
+}
+
+function cargarDatos() {
+    const guardado = localStorage.getItem('horarios_semanas_v2');
+    if (guardado) {
+        try {
+            semanas = JSON.parse(guardado);
+        } catch(e) {
+            semanas = [];
+        }
+    }
+}
+
+function guardarAtajos() {
+    localStorage.setItem('horarios_atajos_v1', JSON.stringify(atajos));
+}
+
+function cargarAtajos() {
+    const guardado = localStorage.getItem('horarios_atajos_v1');
+    if (guardado) {
+        try {
+            atajos = JSON.parse(guardado);
+        } catch (e) {
+            atajos = [];
+        }
+    }
+    if (!atajos || atajos.length === 0) {
+        atajos = ['Libre', '10:00 a 16:00', '16:00 a 00:00'];
+        guardarAtajos();
+    }
+}
+
+function agregarSemanaPorDefecto() {
+    semanas.push({
+        id: 'sem_' + Date.now(),
+        titulo: 'Nuevo Horario Semanal',
+        editandoTitulo: false,
+        colapsado: false,
+        mostrarTotalPdf: false,
+        atajosOcultos: false,
+        empleados: [
+            { id: 'emp_1', nombre: 'Pablo', dias: { Lunes: '16:00', Martes: '16:00', Miércoles: '16:00', Jueves: '16:00', Viernes: '16:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_2', nombre: 'Daisy', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_3', nombre: 'Gabri', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_4', nombre: 'Fer', dias: { Lunes: '00:00', Martes: '00:00', Miércoles: '00:00', Jueves: '00:00', Viernes: '00:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_5', nombre: 'Victoria', dias: { Lunes: '22:20', Martes: '22:30', Miércoles: '22:00', Jueves: '22:00', Viernes: '22:00', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_6', nombre: 'Luis', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false },
+            { id: 'emp_7', nombre: 'Vivi', dias: { Lunes: '16-20', Martes: '16-20', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
+        ]
+    });
+    guardarDatos();
+    renderizar();
+}
+
+function agregarSemana() {
+    semanas.push({
+        id: 'sem_' + Date.now(),
+        titulo: 'Nueva Semana',
+        editandoTitulo: false,
+        colapsado: false,
+        mostrarTotalPdf: false,
+        atajosOcultos: false,
+        empleados: [
+            { id: 'emp_1', nombre: 'Empleado 1', dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' }, ocultoPdf: false }
+        ]
+    });
+    guardarDatos();
+    renderizar();
+}
+
+function eliminarSemana(semId) {
+    if (confirm("¿Estás seguro de eliminar toda esta semana?")) {
+        semanas = semanas.filter(s => s.id !== semId);
+        delete celdasActivasPorSemana[semId];
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function limpiarSemana(semId) {
+    if (confirm("¿Borrar todos los datos de esta semana?")) {
+        let sem = semanas.find(s => s.id === semId);
+        if (sem) {
+            sem.empleados.forEach(emp => {
+                for (let d in emp.dias) {
+                    emp.dias[d] = '';
+                }
+            });
+            guardarDatos();
+            renderizar();
+        }
+    }
+}
+
+function borrarTodoGeneral() {
+    if (confirm("¿Estás seguro de que quieres borrar absolutamente todas las semanas y datos de la aplicación?")) {
+        semanas = [];
+        celdasActivasPorSemana = {};
+        localStorage.removeItem('horarios_semanas_v2');
+        agregarSemanaPorDefecto();
+    }
+}
+
+function toggleEditarTitulo(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.editandoTitulo = !sem.editandoTitulo;
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function actualizarTituloSemana(semId, nuevoValor) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.titulo = nuevoValor;
+        guardarDatos();
+    }
+}
+
+function toggleColapsarSemana(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.colapsado = !sem.colapsado;
+        if (sem.colapsado) {
+            sem.editandoTitulo = false;
+        }
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function toggleAtajos(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.atajosOcultos = !sem.atajosOcultos;
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function toggleEdicionAtajos() {
+    modoEdicionAtajos = !modoEdicionAtajos;
+    renderizar();
+}
+
+function agregarAtajoNuevo() {
+    let texto = prompt('Texto del nuevo atajo (ej: 09:00 a 14:00):');
+    if (texto && texto.trim() !== '') {
+        atajos.push(texto.trim());
+        guardarAtajos();
+        renderizar();
+    }
+}
+
+function editarAtajo(index) {
+    let actual = atajos[index];
+    if (actual === undefined) return;
+    let nuevo = prompt('Editar atajo:', actual);
+    if (nuevo !== null && nuevo.trim() !== '') {
+        atajos[index] = nuevo.trim();
+        guardarAtajos();
+        renderizar();
+    }
+}
+
+function eliminarAtajo(index) {
+    if (confirm('¿Eliminar este atajo?')) {
+        atajos.splice(index, 1);
+        guardarAtajos();
+        renderizar();
+    }
+}
+
+function agregarEmpleado(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        let nuevoNum = sem.empleados.length + 1;
+        sem.empleados.push({
+            id: 'emp_' + Date.now(),
+            nombre: `Empleado ${nuevoNum}`,
+            dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' },
+            ocultoPdf: false
+        });
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function eliminarEmpleado(semId, empId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.empleados = sem.empleados.filter(e => e.id !== empId);
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function actualizarNombreEmpleado(semId, empId, nuevoNombre, inputElement) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        let emp = sem.empleados.find(e => e.id === empId);
+        if (emp) {
+            emp.nombre = nuevoNombre;
+            guardarDatos();
+            let fila = inputElement.closest('tr');
+            if (fila) {
+                fila.style.backgroundColor = obtenerColorEmpleado(nuevoNombre);
+            }
+        }
+    }
+}
+
+function actualizarTurno(semId, empId, dia, valor) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        let emp = sem.empleados.find(e => e.id === empId);
+        if (emp) {
+            emp.dias[dia] = valor;
+            guardarDatos();
+            actualizarHorasUI(semId, empId);
+        }
+    }
+}
+
+function toggleOcultoPdf(semId, empId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        let emp = sem.empleados.find(e => e.id === empId);
+        if (emp) {
+            emp.ocultoPdf = !emp.ocultoPdf;
+            guardarDatos();
+            renderizar();
+        }
+    }
+}
+
+function toggleMostrarTotalPdf(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (sem) {
+        sem.mostrarTotalPdf = !sem.mostrarTotalPdf;
+        guardarDatos();
+    }
+}
+
+function calcularHorasTotales(emp) {
+    let totalMinutos = 0;
+    const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    
+    diasSemana.forEach(dia => {
+        let texto = emp.dias[dia];
+        if (!texto) return;
+        
+        let lineas = texto.split('\n');
+        lineas.forEach(linea => {
+            linea = linea.trim();
+            if (!linea) return;
+            
+            let match = linea.match(/(\d{1,2})[:h.]?(\d{2})?\s*(?:a|hasta|-)\s*(\d{1,2})[:h.]?(\d{2})?/i);
+            if (match) {
+                let h1 = parseInt(match[1], 10);
+                let m1 = match[2] ? parseInt(match[2], 10) : 0;
+                let h2 = parseInt(match[3], 10);
+                let m2 = match[4] ? parseInt(match[4], 10) : 0;
+                
+                let minutosInicio = h1 * 60 + m1;
+                let minutosFin = h2 * 60 + m2;
+                
+                if (minutosFin < minutosInicio) {
+                    minutosFin += 24 * 60;
+                }
+                totalMinutos += (minutosFin - minutosInicio);
+            }
+        });
+    });
+    
+    let horas = (totalMinutos / 60).toFixed(1);
+    if (horas.endsWith('.0')) {
+        horas = parseInt(horas, 10);
+    }
+    return horas;
+}
+
+function actualizarHorasUI(semId, empId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (!sem) return;
+    let emp = sem.empleados.find(e => e.id === empId);
+    if (!emp) return;
+    
+    let spanHoras = document.getElementById(`horas_${semId}_${empId}`);
+    if (spanHoras) {
+        spanHoras.innerText = calcularHorasTotales(emp) + 'h';
+    }
+}
+
+function exportarPDFSemana(semId) {
+    let sem = semanas.find(s => s.id === semId);
+    if (!sem) return;
+
+    let bloque = document.getElementById(`bloque_${semId}`);
+    if (!bloque) return;
+
+    let tituloOriginalPagina = document.title;
+    let nombreSemanaActual = sem.titulo ? sem.titulo.trim() : 'Horario';
+    
+    if (sem.mostrarTotalPdf) {
+        document.title = nombreSemanaActual + ' - Total horas';
+    } else {
+        document.title = nombreSemanaActual;
+    }
+
+    bloque.classList.add('imprimiendo-activo');
+    if (sem.mostrarTotalPdf) {
+        document.body.classList.add('exportar-total-activo');
+        bloque.querySelectorAll('.horas-container').forEach(el => el.classList.add('horas-exportables-activo'));
+    }
+
+    window.print();
+
+    setTimeout(() => {
+        bloque.classList.remove('imprimiendo-activo');
+        document.body.classList.remove('exportar-total-activo');
+        bloque.querySelectorAll('.horas-container').forEach(el => el.classList.remove('horas-exportables-activo'));
+        document.title = tituloOriginalPagina;
+    }, 500);
+}
+
+function dispararImportarPDF(semId) {
+    let input = document.getElementById(`file_pdf_${semId}`);
+    if (input) input.click();
+}
+
+async function importarPDFSemana(semId, event) {
+    let archivo = event.target.files[0];
+    if (!archivo) return;
+
+    try {
+        let lectorArray = await archivo.arrayBuffer();
+        let pdfDoc = await pdfjsLib.getDocument({ data: lectorArray }).promise;
+        let itemsTexto = [];
+
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            let pagina = await pdfDoc.getPage(i);
+            let contenido = await pagina.getTextContent();
+            contenido.items.forEach(item => {
+                let texto = item.str.trim();
+                if (texto !== '') {
+                    itemsTexto.push({ 
+                        str: texto, 
+                        y: Math.round(item.transform[5]), 
+                        x: Math.round(item.transform[4]) 
+                    });
+                }
+            });
+        }
+
+        let sem = semanas.find(s => s.id === semId);
+        if (!sem) return;
+
+        const nombresDiasOrdenados = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        let coordenadasDias = {};
+
+        itemsTexto.forEach(item => {
+            let txtClean = item.str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            nombresDiasOrdenados.forEach(dia => {
+                let diaClean = dia.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                if (txtClean === diaClean) {
+                    coordenadasDias[dia] = item.x;
+                }
+            });
         });
 
-        if (modoEdicionAtajos) {
-            const btnAgregar = document.createElement('button');
-            btn_agregar_clase: btnAgregar.className = 'atajo-btn';
-            btnAgregar.style.backgroundColor = '#d1fae5';
-            btnAgregar.style.color = '#065f46';
-            btnAgregar.innerHTML = '<strong>+ Añadir atajo</strong>';
-            btnAgregar.onclick = agregarAtajoNuevo;
-            contenedor.appendChild(btnAgregar);
-
-            btnEditar.textContent = '✔️ Guardar Cambios';
-            btnEditar.style.backgroundColor = '#10b981';
+        let xArr = nombresDiasOrdenados.map(d => coordenadasDias[d]).filter(x => x !== undefined);
+        let umbralesX = [];
+        
+        if (xArr.length === 7) {
+            xArr.sort((a, b) => a - b);
+            for (let i = 0; i < xArr.length - 1; i++) {
+                umbralesX.push((xArr[i] + xArr[i+1]) / 2);
+            }
         } else {
-            btnEditar.textContent = '✏️ Editar Atajos';
-            btnEditar.style.backgroundColor = '#4f46e5';
+            umbralesX = [75, 135, 195, 255, 315, 375];
         }
-    }
 
-    // Alternar entre modo normal y modo edición
-    function alternarModoEdicionAtajos() {
-        modoEdicionAtajos = !modoEdicionAtajos;
-        renderizarAtajos();
-    }
-
-    // Funciones CRUD para Atajos
-    function agregarAtajoNuevo() {
-        const nuevo = prompt('Introduce el nombre del nuevo atajo (ej. 08:00 a 15:00):');
-        if (nuevo && nuevo.trim() !== '') {
-            atajos.push(nuevo.trim());
-            guardarAtajos();
-            renderizarAtajos();
+        function obtenerDiaPorX(x) {
+            for (let i = 0; i < umbralesX.length; i++) {
+                if (x < umbralesX[i]) return nombresDiasOrdenados[i];
+            }
+            return nombresDiasOrdenados[6];
         }
-    }
 
-    function editarAtajo(index) {
-        const actual = atajos[index];
-        const modificado = prompt('Modifica el atajo:', actual);
-        if (modificado !== null && modificado.trim() !== '') {
-            atajos[index] = modificado.trim();
-            guardarAtajos();
-            renderizarAtajos();
+        let itemsValidos = itemsTexto.filter(item => {
+            let t = item.str.toLowerCase();
+            if (t.includes('horario semanal') || t.includes('samain') || t.includes('página') || t.includes('github.io') || t.includes('empleado')) return false;
+            if (nombresDiasOrdenados.some(d => d.toLowerCase() === t)) return false;
+            return true;
+        });
+
+        itemsValidos.sort((a, b) => b.y - a.y);
+
+        let filasAgrupadas = [];
+        let filaActual = [];
+        let ultimaY = null;
+
+        itemsValidos.forEach(item => {
+            if (ultimaY === null || Math.abs(item.y - ultimaY) > 10) {
+                if (filaActual.length > 0) {
+                    filasAgrupadas.push(filaActual);
+                }
+                filaActual = [item];
+                ultimaY = item.y;
+            } else {
+                filaActual.push(item);
+            }
+        });
+        if (filaActual.length > 0) {
+            filasAgrupadas.push(filaActual);
         }
-    }
 
-    function eliminarAtajo(index) {
-        if (confirm(`¿Seguro que deseas eliminar el atajo "${atajos[index]}"?`)) {
-            atajos.splice(index, 1);
-            guardarAtajos();
-            renderizarAtajos();
+        const listaNombresEmpleadosFijos = ['pablo', 'daisy', 'gabri', 'fer', 'victoria', 'luis', 'vivi'];
+        let empleadosMap = new Map();
+
+        listaNombresEmpleadosFijos.forEach(nombre => {
+            let nombreCapitalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+            empleadosMap.set(nombreCapitalizado, {
+                id: 'emp_' + Math.random().toString(36).substring(2, 7),
+                nombre: nombreCapitalizado,
+                dias: { Lunes: '', Martes: '', Miércoles: '', Jueves: '', Viernes: '', Sábado: '', Domingo: '' },
+                ocultoPdf: false
+            });
+        });
+
+        let empleadoActualKey = null;
+
+        filasAgrupadas.forEach(fila => {
+            fila.sort((a, b) => a.x - b.x);
+            let primerItem = fila[0];
+            let primerTexto = primerItem.str;
+            let primerLower = primerTexto.toLowerCase();
+
+            let nombreEncontrado = Array.from(empleadosMap.keys()).find(n => n.toLowerCase() === primerLower);
+            
+            if (nombreEncontrado) {
+                empleadoActualKey = nombreEncontrado;
+                let restoItems = fila.slice(1);
+                if (restoItems.length > 0 && empleadoActualKey) {
+                    procesarItemsEnDias(empleadosMap.get(empleadoActualKey), restoItems, obtenerDiaPorX);
+                }
+            } else if (empleadoActualKey) {
+                procesarItemsEnDias(empleadosMap.get(empleadoActualKey), fila, obtenerDiaPorX);
+            }
+        });
+
+        let empleadosImportados = Array.from(empleadosMap.values()).filter(emp => {
+            return Object.values(emp.dias).some(d => d.trim() !== '');
+        });
+
+        if (empleadosImportados.length > 0) {
+            sem.empleados = empleadosImportados;
+            guardarDatos();
+            renderizar();
+            alert(`¡Importación correcta! Se han cargado ${empleadosImportados.length} empleados.`);
+        } else {
+            alert("No se han podido reconocer los turnos automáticamente.");
         }
+
+    } catch (error) {
+        console.error(error);
+        alert("Hubo un error al procesar el archivo PDF.");
+    } finally {
+        event.target.value = '';
     }
+}
 
-    function seleccionarAtajo(atajo) {
-        alert(`Turno seleccionado: ${atajo}`);
-        // Aquí puedes integrar la lógica de tu aplicación para aplicar el turno seleccionado al día correspondiente
-    }
+function procesarItemsEnDias(empObj, itemsFila, obtenerDiaPorX) {
+    itemsFila.forEach(item => {
+        if (item.x < 40) return;
 
-    // Inicializar al cargar la página
-    window.onload = function() {
-        cargarAtajos();
-        renderizarAtajos();
-    };
-</script>
+        let diaAsignado = obtenerDiaPorX(item.x);
+        let textoLimpio = item.str;
 
-</body>
-</html>
+        if (empObj.dias[diaAsignado]) {
+            let actual = empObj.dias[diaAsignado];
+            if (actual.endsWith('a') || actual.endsWith('-') || actual.endsWith('hasta')) {
+                empObj.dias[diaAsignado] = actual + ' ' + textoLimpio;
+            } else {
+                empObj.dias[diaAsignado] = actual + '\n' + textoLimpio;
+            }
+        } else {
+            empObj.dias[diaAsignado] = textoLimpio;
+        }
+    });
+}
+
+function renderizar() {
+    let contenedor = document.getElementById('semanas-contenedor');
+    if (!contenedor) return;
+    
+    let html = '';
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+    semanas.forEach(sem => {
+        let textoBtnEditar = sem.editandoTitulo ? '<img src="guardar.png" class="icon-btn" alt=""> Guardar' : '<img src="editar.png" class="icon-btn" alt=""> Editar';
+
+        html += `
+        <div class="semana-bloque" id="bloque_${sem.id}">
+            <div class="semana-header" style="margin-bottom: ${sem.colapsado ? '0' : '10px'};">
+                <div class="semana-titulo-container">
+                    <button class="btn-toggle-collapse" onclick="toggleColapsarSemana('${sem.id}')" title="Contraer / Expandir">
+                        ${sem.colapsado ? '▼' : '▲'}
+                    </button>
+                    <input type="text" class="semana-titulo-input" value="${sem.titulo}" 
+                        oninput="actualizarTituloSemana('${sem.id}', this.value)" 
+                        ${sem.editandoTitulo ? '' : 'disabled'}>
+                </div>`;
+
+        if (!sem.colapsado) {
+            html += `
+                <div class="semana-acciones-header">
+                    <button class="btn btn-outline btn-sm" onclick="toggleEditarTitulo('${sem.id}')">${textoBtnEditar}</button>
+                    <button class="btn btn-outline btn-sm" onclick="limpiarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Borrar Datos</button>
+                    <button class="btn btn-outline btn-sm" onclick="agregarEmpleado('${sem.id}')"><img src="mas.png" class="icon-btn" alt=""> Empleado</button>
+                    <button class="btn btn-primary btn-sm" onclick="exportarPDFSemana('${sem.id}')"><img src="pdf.png" class="icon-btn" alt=""> Crear PDF</button>
+                    <button class="btn btn-outline btn-sm" onclick="dispararImportarPDF('${sem.id}')"><img src="importpdf.png" class="icon-btn" alt=""> Importar PDF</button>
+                    <input type="file" id="file_pdf_${sem.id}" accept="application/pdf" style="display: none;" onchange="importarPDFSemana('${sem.id}', event)">
+                    <button class="btn btn-danger btn-sm" onclick="eliminarSemana('${sem.id}')"><img src="papelera.png" class="icon-btn" alt=""> Eliminar Semana</button>
+                </div>`;
+        }
+
+        html += `</div>`;
+
+        if (!sem.colapsado) {
+            let atajosOcultos = sem.atajosOcultos || false;
+
+            html += `
+            <div class="atajos-toolbar no-print">
+                <div class="atajos-cabecera ${atajosOcultos ? '' : 'con-margen'}">
+                    <span class="atajos-label"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos</span>
+                    <div style="display:flex; gap:8px;">
+                        ${!atajosOcultos ? `<button type="button" class="btn-toggle-atajos" onclick="toggleEdicionAtajos()">${modoEdicionAtajos ? 'Listo ✔️' : 'Editar ✏️'}</button>` : ''}
+                        <button type="button" class="btn-toggle-atajos" onclick="toggleAtajos('${sem.id}')">
+                            ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
+                        </button>
+                    </div>
+                </div>`;
+
+            if (!atajosOcultos) {
+                html += `<div class="atajos-botones">`;
+                atajos.forEach((texto, idx) => {
+                    let textoEscapado = texto.replace(/'/g, "\\'");
+                    if (modoEdicionAtajos) {
+                        html += `
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <button type="button" class="btn-atajo" onclick="editarAtajo(${idx})" title="Clic para editar el texto">${texto}</button>
+                                <button type="button" onclick="eliminarAtajo(${idx})" title="Eliminar atajo" style="border:none; background:#e57373; color:#fff; border-radius:50%; width:22px; height:22px; cursor:pointer; font-size:12px; line-height:1;">✕</button>
+                            </div>`;
+                    } else {
+                        html += `<button type="button" class="btn-atajo" style="flex:1;" onclick="aplicarAtajoSemana('${sem.id}', '${textoEscapado}')">${texto}</button>`;
+                    }
+                });
+                if (modoEdicionAtajos) {
+                    html += `<button type="button" onclick="agregarAtajoNuevo()" style="border:1px dashed #999; background:transparent; border-radius:6px; padding:6px 10px; cursor:pointer;">+ Añadir atajo</button>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            ${dias.map(d => `<th>${d}</th>`).join('')}
+                            <th class="no-print">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            sem.empleados.forEach((emp) => {
+                let totalH = calcularHorasTotales(emp);
+                let claseOculto = emp.ocultoPdf ? 'fila-oculta-pdf' : '';
+                let iconoOjo = emp.ocultoPdf ? '🙈' : '👁️';
+                let estiloFila = emp.ocultoPdf ? 'opacity: 0.4;' : '';
+                let colorSuave = obtenerColorEmpleado(emp.nombre);
+
+                html += `
+                        <tr class="${claseOculto}" style="${estiloFila} background-color: ${colorSuave};">
+                            <td>
+                                <div class="empleado-cell">
+                                    <input type="text" class="empleado-input" value="${emp.nombre}" oninput="actualizarNombreEmpleado('${sem.id}', '${emp.id}', this.value, this)">
+                                    <div class="horas-container">
+                                        <span class="total-horas" id="horas_${sem.id}_${emp.id}">${totalH}h</span>
+                                    </div>
+                                </div>
+                            </td>`;
+
+                dias.forEach(dia => {
+                    let valorDia = emp.dias[dia] || '';
+                    html += `
+                            <td>
+                                <textarea 
+                                    class="day-textarea"
+                                    oninput="actualizarTurno('${sem.id}', '${emp.id}', '${dia}', this.value)" 
+                                    onfocus="registrarCeldaActiva('${sem.id}', '${emp.id}', '${dia}', this)"
+                                >${valorDia}</textarea>
+                            </td>`;
+                });
+
+                html += `
+                            <td class="no-print celda-acciones">
+                                <button class="btn-eye" onclick="toggleOcultoPdf('${sem.id}', '${emp.id}')" title="Mostrar/Ocultar em PDF">${iconoOjo}</button>
+                                <button class="btn-delete" onclick="eliminarEmpleado('${sem.id}', '${emp.id}')">X</button>
+                            </td>
+                        </tr>`;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            </div>
+            <div class="export-toggle-container no-print">
+                <input type="checkbox" id="chk_total_${sem.id}" ${sem.mostrarTotalPdf ? 'checked' : ''} onchange="toggleMostrarTotalPdf('${sem.id}')">
+                <label for="chk_total_${sem.id}">Mostrar total de horas en el PDF de esta semana</label>
+            </div>`;
+        }
+
+        html += `
+            <div class="logo-marca-agua">
+                <img src="LOGO.png" alt="Samaín La Cormelana">
+            </div>
+        `;
+
+        html += `</div>`;
+    });
+
+    contenedor.innerHTML = html;
+}
