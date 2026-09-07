@@ -84,7 +84,6 @@ function cargarDatos() {
     if (guardado) {
         try {
             semanas = JSON.parse(guardado);
-            // Asegurar compatibilidad con semanas antiguas
             semanas.forEach(sem => {
                 if (!sem.atajos) {
                     sem.atajos = [
@@ -629,10 +628,16 @@ function renderizar() {
             <div class="atajos-toolbar no-print" style="margin-bottom: 8px; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 <div style="display: flex; justify-content: space-between; align-items: center; ${atajosOcultos ? '' : 'margin-bottom: 6px;'}">
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos:</span>
+                        <span style="font-size: 11px; font-weight: bold; color: #475569; display: flex; align-items: center; gap: 4px;"><img src="rayo.png" class="icon-btn" alt=""> Atajos rápidos:</span>`;
+            
+            if (!atajosOcultos) {
+                html += `
                         <button type="button" onclick="toggleEditarAtajos('${sem.id}')" title="Editar atajos" style="background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; font-size: 10px; padding: 2px 6px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;">
                             <img src="editar.png" class="icon-btn" alt="" style="width: 10px; height: 10px;"> ${editandoAtajos ? 'Listo' : 'Editar'}
-                        </button>
+                        </button>`;
+            }
+
+            html += `
                     </div>
                     <button type="button" onclick="toggleAtajos('${sem.id}')" style="background: transparent; border: none; color: #3b82f6; font-size: 11px; font-weight: bold; cursor: pointer; padding: 0; min-width: auto; flex: unset;">
                         ${atajosOcultos ? 'Mostrar 🔽' : 'Ocultar 🔼'}
